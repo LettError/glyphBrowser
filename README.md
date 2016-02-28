@@ -1,4 +1,4 @@
-# glyphBrowser
+# GlyphBrowser
 
 ![Screenshot of the GlyphBrowser panel in RoboFont](glyphBrowserScreen.jpg)
 
