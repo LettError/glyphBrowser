@@ -28,6 +28,13 @@
 	<key>timeStamp</key>
 	<real>1456669102.416543</real>
 	<key>version</key>
-	<string>1.0</string>
+	<string>1.1</string>
+	<key>com.robofontmechanic.Mechanic</key>
+	<dict>
+	  <key>repository</key>
+	  <string>LettError/glyphBrowser</string>
+	  <key>summary</key>
+	  <string>A sketch for a panel to browse and select unicode categories, ranges and glyph lists.</string>
+	</dict>
 </dict>
 </plist>
