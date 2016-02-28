@@ -136,15 +136,19 @@ class AGDGlyph(object):
         # return a list of all names, tags, strings that could serve as selection criteria
         allCats = []
         if self.error:
-            allCats.append(".Error")
+            allCats.append(u"➤ Error")
         if self.uni is None:
-            allCats.append(".Unencoded")
+            allCats.append(u"➤ No unicode")
         if self.unicodeRangeName is not None:
             allCats.append(self.unicodeRangeName)
         if self.unicodeCategoryName is not None:
             allCats.append(self.unicodeCategoryName)
         for s in self.set:
-            allCats.append(s)
+            allCats.append(u"☰ "+s)
+        if u"." in self.name and self.name[0]!=u".":
+            # catch glyph names with extensions, but not .notdef
+            extension = self.name.split(".")[-1]
+            allCats.append(u"⋯"+extension)
         return allCats
         
     def matchCategory(self, catName):
