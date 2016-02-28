@@ -3,7 +3,7 @@
 ![Screenshot of the GlyphBrowser panel in RoboFont](glyphBrowserScreen.jpg)
 
 A sketch for a RoboFont extension for browsing and selecting unicode values, glyphnames, categories, lists.
-This combines glyphnames from the AGD.txt file in the [Adobe AFDKO](https://github.com/adobe-type-tools/afdko/blob/master/FDK/Tools/SharedData/AGD.txt) with the unicode categories and range information. A preview of the unicode character is drawn by OSX.
+This combines glyphnames from the AGD.txt file in the [Adobe AFDKO](https://github.com/adobe-type-tools/afdko/blob/master/FDK/Tools/SharedData/AGD.txt) with the unicode categories and range information. A preview of the unicode character is drawn by OSX. Selected glyphs are available in glyphname syntax and as unicode string. 
 
 ## To do:
 
@@ -13,4 +13,5 @@ This combines glyphnames from the AGD.txt file in the [Adobe AFDKO](https://gith
   * Better typography for the column of hex values
   * Maybe report in the list if a glyph is present in the current font?
   * How to handle the glyphs in the .Error category?
+  * Allow more files with the same syntax to overwrite existing glyphs to we can patch the database without touching Adobe AGD.txt
   
