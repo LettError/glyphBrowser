@@ -136,19 +136,19 @@ class AGDGlyph(object):
         # return a list of all names, tags, strings that could serve as selection criteria
         allCats = []
         if self.error:
-            allCats.append(u"➤ Error")
+            allCats.append(u"⚠️\tError")
         if self.uni is None:
-            allCats.append(u"➤ No unicode")
+            allCats.append(u"⋯\tNo unicode")
         if self.unicodeRangeName is not None:
-            allCats.append(self.unicodeRangeName)
+            allCats.append(u"💬\t"+self.unicodeRangeName)
         if self.unicodeCategoryName is not None:
-            allCats.append(self.unicodeCategoryName)
+            allCats.append(u"📕\t"+ self.unicodeCategoryName)
         for s in self.set:
-            allCats.append(u"☰ "+s)
+            allCats.append(u"☰\t"+s)
         if u"." in self.name and self.name[0]!=u".":
             # catch glyph names with extensions, but not .notdef
             extension = self.name.split(".")[-1]
-            allCats.append(u"⋯"+extension)
+            allCats.append(u"\t"+extension)
         return allCats
         
     def matchCategory(self, catName):
@@ -292,8 +292,8 @@ class Browser(object):
                  'width': 80},
             ]
         self.w.selectedNames = vanilla.List((200,0,-200,0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
-        self.w.selectionUnicodeText = vanilla.EditText((-200, 0, 0, 100), "Selectable Unicode Text")
-        self.w.selectionGlyphNames = vanilla.EditText((-200, 100, 0, 100), "Selectable Glyph Names", sizeStyle="mini")
+        self.w.selectionUnicodeText = vanilla.EditText((-200, 0, 0, 200), "Selectable Unicode Text")
+        self.w.selectionGlyphNames = vanilla.EditText((-200, 200, 0, 200), "Selectable Glyph Names", sizeStyle="small")
         self.w.addButton = vanilla.Button((-190, -60, -10, 20), "Add glyphs", callback=self.callbackAddGlyphsButton)
         self.w.progress = vanilla.TextBox((-190, -35, -10, 40), "", sizeStyle="small")
         self.w.addButton.enable(False)
