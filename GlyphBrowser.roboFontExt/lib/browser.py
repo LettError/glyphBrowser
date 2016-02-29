@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*-
-
-from lib.tools.misc import unicodeToChar, charToUnicode
+try:
+    from lib.tools.misc import unicodeToChar
+except ImportError:
+    unicodeToChar = unichr
 from unicodeRangeNames import getRangeName, getRangeAndName
 import unicodedata
 import vanilla
@@ -103,6 +105,13 @@ class AGDGlyph(object):
             d['uniHex'] = "%05x"%self.uni
         else:
             d['uniHex'] = ""
+        d["parts"] = ""
+        if self.cmp is not None:
+            if len(self.cmp)>0:
+                d["parts"] = self.cmp[0]
+        #if self.sub is not None:
+        #    if len(self.sub)>0:
+        #        d["parts"] += self.sub[0]
         return d
 
     def __repr__(self):
@@ -144,7 +153,7 @@ class AGDGlyph(object):
         # return a list of all names, tags, strings that could serve as selection criteria
         allCats = []
         if self.srcPath:
-            allCats.append(u"☰\t%s"%self.srcPath)
+            allCats.append(u"📦\t%s"%self.srcPath)
         if self.error:
             allCats.append(u"⚠️\tError")
         if self.uni is None:
@@ -156,11 +165,11 @@ class AGDGlyph(object):
         for s in self.set:
             allCats.append(u"☰\t"+s)
         if "_" in self.name:
-            allCats.append(u"☰\tCompound glyphs")
+            allCats.append(u"f_f_l\tCombined glyphs")
         if u"." in self.name and self.name[0]!=u".":
             # catch glyph names with extensions, but not .notdef
             extension = self.name.split(".")[-1]
-            allCats.append(u"\t"+extension)
+            allCats.append(u"…\t"+extension)
         return allCats
         
     def matchCategory(self, catName):
@@ -192,14 +201,84 @@ class AGDGlyph(object):
             if anything in s:
                 return True
         return False
+    
+    def update(self, other):
+        # update this record with values from the other
+        # so we can change everything but the name
+        #print 'updating record from', other
+        if other.uni is not None:
+            #print "\tupdating uni", other.uni
+            self.uni = other.uni
+            self.lookupRefs()
+        if other.name is not None:
+            #print "\tupdating name", other.name
+            self.name = other.name
+        if other.sub:
+            self.sub = other.sub
+        if other.set:
+            self.set = other.set
+        if other.fin is not None:
+            self.fin = other.fin
+        if other.min is not None:
+            self.min = other.min
+        if other.maj is not None:
+            self.maj = other.maj
+        if other.cmp is not None:
+            self.cmp = other.cmp
         
+        
+
+class GlyphDict(dict):
+    uniMap = {}
+    def update(self, record):
+        # find a record
+        #     - with the same name
+        #     - with the same unicode
+        # then update the parts
+        # option 1: same name, different values
+        added = False
+        if record.name in self:
+            #print "a checking", record
+            # a record exists with the same name
+            # update the unicode, other values
+            other = self[record.name]
+            other.update(record)
+            if record.uni is not None:
+                if record.uni in self.uniMap:
+                    del self.uniMap[record.uni]
+                self.uniMap[record.uni] = record.name
+            return
+        # option 2: same unicode, different values, name
+        elif record.uni is not None:
+            #print "b checking", record
+            if record.uni in self.uniMap:
+                name = self.uniMap[record.uni]
+                glyph = self[name]
+            #for name, glyph in self.items():
+                #if glyph.uni == record.uni:
+                oldName = glyph.name
+                glyph.update(record)
+                self[record.name] = glyph
+                del self[oldName]
+                added = True
+                self.uniMap[record.uni] = record.name
+                #break
+            if added:
+                return
+        # option 3: just new glyph
+        #print "c checking", record
+        self.uniMap[record.uni] = record.name
+        self[record.name] = record
+    
 def readAGD(path, glyphDictionary=None):
+    #print "loading", path
     if glyphDictionary is None:
-        glyphDictionary = {}
+        glyphDictionary = GlyphDict()
     f = open(path, 'r')
     d = f.read()
     f.close()
     lines = d.split("\n")
+    #print "read %d lines"%len(lines)
     entryObject = None
     name = None
     allTags = {}
@@ -210,6 +289,7 @@ def readAGD(path, glyphDictionary=None):
             continue
         if l[0]!="\t":
             # new entry
+            #print "--line", l
             if entryObject:
                 #if entryObject.uni is not None:
                 #    # in order to avoid glyphs with different names
@@ -222,7 +302,9 @@ def readAGD(path, glyphDictionary=None):
                 #        if o.uni == entryObject.uni:
                 #            print "removing", o.name
                 #            del glyphDictionary[o.name]
-                glyphDictionary[name] = entryObject
+                #print "adding", entryObject
+                glyphDictionary.update(entryObject)
+                #glyphDictionary[name] = entryObject
                 entryObject = None
             name = l
             entryObject = AGDGlyph(name, path)
@@ -242,9 +324,11 @@ def readAGD(path, glyphDictionary=None):
         elif tag == "maj":
             entryObject.maj = items[0]
         elif tag == "cmp":
-            entryObject.cmp = items[0]
+            entryObject.cmp = items
         elif tag == "fin":
             entryObject.fin = items[0]
+        elif tag == "sub":
+            entryObject.sub = items
         elif tag == "set":
             entryObject.set = items
         # BE tags
@@ -253,10 +337,13 @@ def readAGD(path, glyphDictionary=None):
         elif tag == "lan":
             entryObject.lan = items[0].split(",")
         elif tag == "con":
-            entryObject.lan = items[0]
+            entryObject.con = items[0]
+    #print "done reading"
+    # add the trailing entryObject
+    if entryObject is not None:
+        glyphDictionary.update(entryObject)
     for name, glyph in glyphDictionary.items():
         glyph.lookupRefs()
-    # add the trailing entryObject
     return glyphDictionary
 
 def findCategory(data, category):
@@ -312,7 +399,7 @@ class Browser(object):
         self.catNames = self.dataByCategory.keys()
         self.catNames.sort()
         self.currentSelection = []
-        self.w = vanilla.Window((800, 500), "AGD Glyph and Unicode Browser using Unicode %s"%unicodedata.unidata_version)
+        self.w = vanilla.Window((1000, 600), "AGD Glyph and Unicode Browser using Unicode %s"%unicodedata.unidata_version)
         columnDescriptions = [
             {'title': "Categories, ranges, namelists", 'key': 'name'},
         ]
@@ -326,7 +413,10 @@ class Browser(object):
                  'width': 80},
             {    'title': "Char",
                  'key': 'string',
-                 'width': 80},
+                 'width': 40},
+            {    'title': "Construction (inactive..)",
+                 'key': 'parts',
+                 },
             ]
         self.w.selectedNames = vanilla.List((200,0,-200,0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
         self.w.selectionUnicodeText = vanilla.EditText((-200, 0, 0, 200), "Selectable Unicode Text")
@@ -408,7 +498,11 @@ class Browser(object):
         self.w.selectedNames.set(items)
     
 if __name__ == "__main__":
-    glyphDictionary = {}
+    glyphDictionary = GlyphDict()
     glyphDictionary = readAGD("AGD.txt", glyphDictionary)
+    #glyphDictionary = readAGD("test.AGD.txt", glyphDictionary)    
     #glyphDictionary = readAGD("arabic.AGD.txt", glyphDictionary)
+    #print glyphDictionary.keys()
+    #print collectSearchCategories(glyphDictionary)
+    
     browser = Browser(glyphDictionary)

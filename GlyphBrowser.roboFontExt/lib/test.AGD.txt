@@ -1,0 +1,31 @@
+# Arabic letter presentaion forms as simplified Arabic
+alef.isol
+	uni: 0xFE8D
+	lan: fa,ar,ur
+	typ: letter
+	con: False
+alef.fina
+	uni: 0xFE8E
+	lan: fa,ar,ur
+	typ: letter
+	con: False
+A
+	uni: 0041
+	cmp: A+B+C
+# redefine the name, identify with unicode
+AlternativeNameForA
+	uni: 0041
+B
+	uni: FFFF
+C
+	uni: 0043
+# redefine unicode in the same file
+C
+	uni: 0044
+# redefine the name in the same file
+D
+	uni: 0044
+# add attributes to existing glyph
+A
+	uni: 0041
+	cmp: C+D+E
