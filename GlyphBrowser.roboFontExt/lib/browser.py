@@ -3,7 +3,10 @@ try:
     from lib.tools.misc import unicodeToChar
 except ImportError:
     unicodeToChar = unichr
-from unicodeRangeNames import getRangeName, getRangeAndName
+
+import unicodeRangeNames
+reload(unicodeRangeNames)
+from unicodeRangeNames import getRangeName, getRangeAndName, getPlaneName
 import unicodedata
 import vanilla
 
@@ -109,6 +112,10 @@ class AGDGlyph(object):
         if self.cmp is not None:
             if len(self.cmp)>0:
                 d["parts"] = self.cmp[0]
+        if self.fin is not None:
+            d['final'] = self.fin
+        else:
+            d['final'] = ""
         #if self.sub is not None:
         #    if len(self.sub)>0:
         #        d["parts"] += self.sub[0]
@@ -162,6 +169,8 @@ class AGDGlyph(object):
             allCats.append(u"💬\t"+self.unicodeRangeName)
         if self.unicodeCategoryName is not None:
             allCats.append(u"📕\t"+ self.unicodeCategoryName)
+        if self.uni is not None:
+            allCats.append(u"🔣\t"+ getPlaneName(self.uni))
         for s in self.set:
             allCats.append(u"☰\t"+s)
         if "_" in self.name:
@@ -230,6 +239,32 @@ class AGDGlyph(object):
 
 class GlyphDict(dict):
     uniMap = {}
+    def getUniMap(self):
+        um = {}
+        for name, glyph in self.items():
+            if glyph.uni is not None:
+                um[glyph.uni] = glyph.name
+        self.uniMap = um
+        return self.uniMap
+    
+    def findMissingUnicodes(self):
+        self.getUniMap()
+        uniNames = {}
+        maxUni = max(self.uniMap.keys())
+        allUni = set(range(1, 0xffff))
+        missing = set(allUni)-set(self.uniMap.keys())                
+        for v in list(missing):
+            c = unicodeToChar(v)
+            try:
+                name = unicodedata.name(c)
+                uniNames[name] = v
+            except ValueError:
+                continue
+        for name, value in uniNames.items():
+            g = AGDGlyph(name, None)
+            g.uni = value
+            self[name] = g
+        
     def update(self, record):
         # find a record
         #     - with the same name
@@ -403,22 +438,25 @@ class Browser(object):
         columnDescriptions = [
             {'title': "Categories, ranges, namelists", 'key': 'name'},
         ]
-        self.w.catNames = vanilla.List((0,0,200, 0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
+        self.w.catNames = vanilla.List((0,0,220, 0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
         columnDescriptions = [
             {    'title': "Adobe Glyph Name",
                  'key': 'name',
-                 'width': 200, },
+                 'width': 220, },
+            {    'title': "Final Name",
+                 'key': 'final',
+                 'width': 120, },
             {    'title': "Unicode",
                  'key': 'uniHex',
                  'width': 80},
             {    'title': "Char",
                  'key': 'string',
                  'width': 40},
-            {    'title': "Construction (inactive..)",
-                 'key': 'parts',
-                 },
+            #{    'title': "Construction (inactive..)",
+            #     'key': 'parts',
+            #     },
             ]
-        self.w.selectedNames = vanilla.List((200,0,-200,0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
+        self.w.selectedNames = vanilla.List((220,0,-200,0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
         self.w.selectionUnicodeText = vanilla.EditText((-200, 0, 0, 200), "Selectable Unicode Text")
         self.w.selectionGlyphNames = vanilla.EditText((-200, 200, 0, 200), "Selectable Glyph Names", sizeStyle="small")
         self.w.addButton = vanilla.Button((-190, -60, -10, 20), "Add glyphs", callback=self.callbackAddGlyphsButton)
@@ -504,5 +542,5 @@ if __name__ == "__main__":
     #glyphDictionary = readAGD("arabic.AGD.txt", glyphDictionary)
     #print glyphDictionary.keys()
     #print collectSearchCategories(glyphDictionary)
-    
+    #glyphDictionary.findMissingUnicodes()
     browser = Browser(glyphDictionary)
