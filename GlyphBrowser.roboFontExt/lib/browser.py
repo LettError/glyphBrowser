@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 
+from lib.tools.misc import unicodeToChar, charToUnicode
 from unicodeRangeNames import getRangeName, getRangeAndName
 import unicodedata
 import vanilla
@@ -64,8 +65,9 @@ unicodeCategoryNames = {
 
 class AGDGlyph(object):
 
-    def __init__(self, name):
+    def __init__(self, name, srcPath):
         self.name = name
+        self.srcPath = srcPath    # the filename of the document this data come from
         self.error = False
         self.uni = None # The Unicode
         self.fin = None # The final name
@@ -75,7 +77,13 @@ class AGDGlyph(object):
         self.min = None # minuscule
         self.maj = None # majuscule
         self.cmp = None # components used to create this composite glyph
+
+        self.typ = None    # BE tag
+        self.con = None    # BE tag, connection
+        self.lan = None    # BE tag, language
+        
         self.other = {} # Hash of any unknown tags
+        
         self.unicodeRange = None
         self.unicodeRangeName = None
         self.unicodeCategory = None
@@ -92,14 +100,14 @@ class AGDGlyph(object):
         d['uni'] = self.uni
         d['string'] = self.unicodeString
         if self.uni is not None:
-            d['uniHex'] = hex(self.uni)[2:]
+            d['uniHex'] = "%05x"%self.uni
         else:
             d['uniHex'] = ""
         return d
 
     def __repr__(self):
         if self.uni is not None:
-            u = "%x"%self.uni
+            u = "%05x"%self.uni
         else:
             u = "-"
         if self.unicodeCategory is not None:
@@ -117,7 +125,7 @@ class AGDGlyph(object):
         if self.uni is None: return
         # category
         try:
-            c = unichr(self.uni)
+            c = unicodeToChar(self.uni)
             self.unicodeString = c
             self.unicodeCategory = unicodedata.category(c)
             self.unicodeCategoryName = unicodeCategoryNames.get(self.unicodeCategory)
@@ -135,6 +143,8 @@ class AGDGlyph(object):
     def getCategories(self):
         # return a list of all names, tags, strings that could serve as selection criteria
         allCats = []
+        if self.srcPath:
+            allCats.append(u"☰\t%s"%self.srcPath)
         if self.error:
             allCats.append(u"⚠️\tError")
         if self.uni is None:
@@ -145,6 +155,8 @@ class AGDGlyph(object):
             allCats.append(u"📕\t"+ self.unicodeCategoryName)
         for s in self.set:
             allCats.append(u"☰\t"+s)
+        if "_" in self.name:
+            allCats.append(u"☰\tCompound glyphs")
         if u"." in self.name and self.name[0]!=u".":
             # catch glyph names with extensions, but not .notdef
             extension = self.name.split(".")[-1]
@@ -181,46 +193,71 @@ class AGDGlyph(object):
                 return True
         return False
         
-def readAGD(path):
+def readAGD(path, glyphDictionary=None):
+    if glyphDictionary is None:
+        glyphDictionary = {}
     f = open(path, 'r')
     d = f.read()
     f.close()
     lines = d.split("\n")
-    names = {}
     entryObject = None
     name = None
     allTags = {}
     for l in lines:
         if len(l)==0:
             continue
+        if l[0] == "#": 
+            continue
         if l[0]!="\t":
             # new entry
-            if entryObject and name is not None:
-                # we still have one?
-                names[name] = entryObject
+            if entryObject:
+                #if entryObject.uni is not None:
+                #    # in order to avoid glyphs with different names
+                #    # but with the same unicode, look for older glyphs
+                #    # with the same unicode and remove those.
+                #    # this way we can overwrite entries.
+                #    # But only for glyphs with unicodes.
+                #    for n, o in glyphDictionary.items():
+                #        print o.uni, entryObject.uni
+                #        if o.uni == entryObject.uni:
+                #            print "removing", o.name
+                #            del glyphDictionary[o.name]
+                glyphDictionary[name] = entryObject
                 entryObject = None
             name = l
-            entryObject = AGDGlyph(name)
+            entryObject = AGDGlyph(name, path)
             continue
         parts = l.split(":")
         tag = parts[0].strip()
         allTags[tag] = True
         items = [p.strip() for p in parts[1].split(" ") if len(p)>0]
         if tag == "uni":
-            entryObject.uni = [int("0x"+value, 16) for value in items][0]
+            hexCanditate = items[0]
+            if "0x" in hexCanditate:
+                hexCanditate = hexCanditate[2:]
+            hexCanditate = int("0x"+hexCanditate, 16)
+            entryObject.uni = hexCanditate
         elif tag == "min":
             entryObject.min = items[0]
         elif tag == "maj":
             entryObject.maj = items[0]
         elif tag == "cmp":
-            entryObject.cmp = items[0].split("+")
+            entryObject.cmp = items[0]
         elif tag == "fin":
             entryObject.fin = items[0]
         elif tag == "set":
             entryObject.set = items
-    for name, glyph in names.items():
+        # BE tags
+        elif tag == "typ":
+            entryObject.typ = items[0]
+        elif tag == "lan":
+            entryObject.lan = items[0].split(",")
+        elif tag == "con":
+            entryObject.lan = items[0]
+    for name, glyph in glyphDictionary.items():
         glyph.lookupRefs()
-    return names
+    # add the trailing entryObject
+    return glyphDictionary
 
 def findCategory(data, category):
     results = []
@@ -321,7 +358,6 @@ class Browser(object):
                 self.w.progress.set("added %s"%glyph.name)
                 actualCount += 1
         self.w.progress.set("%d glyphs added"%actualCount)
-                
         
     def callbackWindowMain(self, sender):
         f = CurrentFont()
@@ -372,6 +408,7 @@ class Browser(object):
         self.w.selectedNames.set(items)
     
 if __name__ == "__main__":
-    path = "AGD.txt"
-    data = readAGD(path)
-    browser = Browser(data)
+    glyphDictionary = {}
+    glyphDictionary = readAGD("AGD.txt", glyphDictionary)
+    #glyphDictionary = readAGD("arabic.AGD.txt", glyphDictionary)
+    browser = Browser(glyphDictionary)
