@@ -94,6 +94,7 @@ class AGDGlyph(object):
         self.unicodeCategory = None
         self.unicodeCategoryName = None
         self.unicodeString = ""
+        self.unicodeName = None
                 
     def uniString(self):
         # return a unicode string with this character, if possible
@@ -116,6 +117,10 @@ class AGDGlyph(object):
             d['final'] = self.fin
         else:
             d['final'] = ""
+        if self.unicodeName is not None:
+            d['uniName'] = self.unicodeName
+        else:
+            d['uniName'] = ""
         #if self.sub is not None:
         #    if len(self.sub)>0:
         #        d["parts"] += self.sub[0]
@@ -145,6 +150,7 @@ class AGDGlyph(object):
             self.unicodeString = c
             self.unicodeCategory = unicodedata.category(c)
             self.unicodeCategoryName = unicodeCategoryNames.get(self.unicodeCategory)
+            self.unicodeName = unicodedata.name(c)
         except ValueError:
             self.error = True
             pass
@@ -379,6 +385,9 @@ def readAGD(path, glyphDictionary=None):
         glyphDictionary.update(entryObject)
     for name, glyph in glyphDictionary.items():
         glyph.lookupRefs()
+    k = allTags.keys()
+    k.sort()
+    print k
     return glyphDictionary
 
 def findCategory(data, category):
@@ -434,7 +443,7 @@ class Browser(object):
         self.catNames = self.dataByCategory.keys()
         self.catNames.sort()
         self.currentSelection = []
-        self.w = vanilla.Window((1000, 600), "AGD Glyph and Unicode Browser using Unicode %s"%unicodedata.unidata_version)
+        self.w = vanilla.Window((1200, 600), "AGD Glyph and Unicode Browser using Unicode %s"%unicodedata.unidata_version)
         columnDescriptions = [
             {'title': "Categories, ranges, namelists", 'key': 'name'},
         ]
@@ -448,10 +457,13 @@ class Browser(object):
                  'width': 120, },
             {    'title': "Unicode",
                  'key': 'uniHex',
-                 'width': 80},
+                 'width': 70},
             {    'title': "Char",
                  'key': 'string',
-                 'width': 40},
+                 'width': 30},
+            {    'title': "Unicode Name",
+                 'key': 'uniName',
+                     },
             #{    'title': "Construction (inactive..)",
             #     'key': 'parts',
             #     },
@@ -538,9 +550,4 @@ class Browser(object):
 if __name__ == "__main__":
     glyphDictionary = GlyphDict()
     glyphDictionary = readAGD("AGD.txt", glyphDictionary)
-    #glyphDictionary = readAGD("test.AGD.txt", glyphDictionary)    
-    #glyphDictionary = readAGD("arabic.AGD.txt", glyphDictionary)
-    #print glyphDictionary.keys()
-    #print collectSearchCategories(glyphDictionary)
-    #glyphDictionary.findMissingUnicodes()
     browser = Browser(glyphDictionary)
