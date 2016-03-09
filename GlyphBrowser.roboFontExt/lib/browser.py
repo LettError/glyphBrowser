@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+import os
 try:
     from lib.tools.misc import unicodeToChar
 except ImportError:
@@ -310,85 +311,35 @@ class GlyphDict(dict):
         #print "c checking", record
         self.uniMap[record.uni] = record.name
         self[record.name] = record
-    
-def readAGD(path, glyphDictionary=None):
-    #print "loading", path
+
+
+def readUniNames(path, glyphDictionary=None):
     if glyphDictionary is None:
         glyphDictionary = GlyphDict()
     f = open(path, 'r')
     d = f.read()
     f.close()
     lines = d.split("\n")
-    #print "read %d lines"%len(lines)
-    entryObject = None
-    name = None
-    allTags = {}
+    niceFileName = os.path.basename(path)
+    
     for l in lines:
-        if len(l)==0:
+        if l[0] == "#": continue
+        if len(l.split(" ")) != 2:
+            print l
             continue
-        if l[0] == "#": 
+        name, hexCandidate = l.split(" ")
+        try: 
+            hexCandidate = int("0x"+hexCandidate, 16)
+        except ValueError:
+            print "bah unicode", hexCandidate, name
             continue
-        if l[0]!="\t":
-            # new entry
-            #print "--line", l
-            if entryObject:
-                #if entryObject.uni is not None:
-                #    # in order to avoid glyphs with different names
-                #    # but with the same unicode, look for older glyphs
-                #    # with the same unicode and remove those.
-                #    # this way we can overwrite entries.
-                #    # But only for glyphs with unicodes.
-                #    for n, o in glyphDictionary.items():
-                #        print o.uni, entryObject.uni
-                #        if o.uni == entryObject.uni:
-                #            print "removing", o.name
-                #            del glyphDictionary[o.name]
-                #print "adding", entryObject
-                glyphDictionary.update(entryObject)
-                #glyphDictionary[name] = entryObject
-                entryObject = None
-            name = l
-            entryObject = AGDGlyph(name, path)
-            continue
-        parts = l.split(":")
-        tag = parts[0].strip()
-        allTags[tag] = True
-        items = [p.strip() for p in parts[1].split(" ") if len(p)>0]
-        if tag == "uni":
-            hexCanditate = items[0]
-            if "0x" in hexCanditate:
-                hexCanditate = hexCanditate[2:]
-            hexCanditate = int("0x"+hexCanditate, 16)
-            entryObject.uni = hexCanditate
-        elif tag == "min":
-            entryObject.min = items[0]
-        elif tag == "maj":
-            entryObject.maj = items[0]
-        elif tag == "cmp":
-            entryObject.cmp = items
-        elif tag == "fin":
-            entryObject.fin = items[0]
-        elif tag == "sub":
-            entryObject.sub = items
-        elif tag == "set":
-            entryObject.set = items
-        # BE tags
-        elif tag == "typ":
-            entryObject.typ = items[0]
-        elif tag == "lan":
-            entryObject.lan = items[0].split(",")
-        elif tag == "con":
-            entryObject.con = items[0]
-    #print "done reading"
-    # add the trailing entryObject
-    if entryObject is not None:
+        entryObject = AGDGlyph(name, niceFileName)
+        entryObject.uni = hexCandidate
         glyphDictionary.update(entryObject)
     for name, glyph in glyphDictionary.items():
         glyph.lookupRefs()
-    k = allTags.keys()
-    k.sort()
-    print k
     return glyphDictionary
+       
 
 def findCategory(data, category):
     results = []
@@ -443,7 +394,7 @@ class Browser(object):
         self.catNames = self.dataByCategory.keys()
         self.catNames.sort()
         self.currentSelection = []
-        self.w = vanilla.Window((1200, 600), "AGD Glyph and Unicode Browser using Unicode %s"%unicodedata.unidata_version)
+        self.w = vanilla.Window((1100, 500), "Glyphname and Unicode Browser using Unicode %s"%unicodedata.unidata_version, minSize=(800, 300))
         columnDescriptions = [
             {'title': "Categories, ranges, namelists", 'key': 'name'},
         ]
@@ -452,9 +403,6 @@ class Browser(object):
             {    'title': "Adobe Glyph Name",
                  'key': 'name',
                  'width': 220, },
-            {    'title': "Final Name",
-                 'key': 'final',
-                 'width': 120, },
             {    'title': "Unicode",
                  'key': 'uniHex',
                  'width': 70},
@@ -464,17 +412,15 @@ class Browser(object):
             {    'title': "Unicode Name",
                  'key': 'uniName',
                      },
-            #{    'title': "Construction (inactive..)",
-            #     'key': 'parts',
-            #     },
             ]
         self.w.selectedNames = vanilla.List((220,0,-200,0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
         self.w.selectionUnicodeText = vanilla.EditText((-200, 0, 0, 200), "Selectable Unicode Text")
         self.w.selectionGlyphNames = vanilla.EditText((-200, 200, 0, 200), "Selectable Glyph Names", sizeStyle="small")
-        self.w.addButton = vanilla.Button((-190, -60, -10, 20), "Add glyphs", callback=self.callbackAddGlyphsButton)
+        self.w.addGlyphPanelButton = vanilla.Button((-190, -60, -10, 20), "Add to Glyphpanel", callback=self.callbackAddToNewGlyphPanel)
         self.w.progress = vanilla.TextBox((-190, -35, -10, 40), "", sizeStyle="small")
-        self.w.addButton.enable(False)
+        self.w.addGlyphPanelButton.enable(False)
         self.w.bind("became main", self.callbackWindowMain)
+        self.w.setDefaultButton(self.w.addGlyphPanelButton)
         self.update()
         self.w.open()
     
@@ -498,13 +444,31 @@ class Browser(object):
                 self.w.progress.set("added %s"%glyph.name)
                 actualCount += 1
         self.w.progress.set("%d glyphs added"%actualCount)
+
+    def callbackAddToNewGlyphPanel(self, sender):
+        #glyphs = [
+        #    "Amacron=A+macron|0100" # mss handig want AGD heeft ook cmp support
+        #]
+        from mojo.UI import CurrentFontWindow
+        f = CurrentFont()
+        if f is None: return
+        glyphs = []
+        if self.currentSelection:
+            for glyph in self.currentSelection:
+                if glyph.name in f:
+                    # skip existing ?
+                    self.w.progress.set("skipping %s"%glyph.name)
+                    continue
+                glyphs.append(u"%s|%04x"%(glyph.name, glyph.uni))
+        controller = CurrentFontWindow()
+        controller.addGlyphs(glyphs)
         
     def callbackWindowMain(self, sender):
         f = CurrentFont()
         if f is not None:
-            self.w.addButton.enable(True)
+            self.w.addGlyphPanelButton.enable(True)
         else:
-            self.w.addButton.enable(False)
+            self.w.addGlyphPanelButton.enable(False)
         
     def callbackGlyphNameSelect(self, sender):
         f = CurrentFont()
@@ -530,9 +494,9 @@ class Browser(object):
         self.w.selectionUnicodeText.set(selectionString)
         self.w.selectionGlyphNames.set("".join(glyphNames))
         if len(self.currentSelection) == 0:
-            self.w.addButton.setTitle("Select glyphs")
+            self.w.addGlyphPanelButton.setTitle("Select glyphs")
         else:
-            self.w.addButton.setTitle("Add glyphs")
+            self.w.addGlyphPanelButton.setTitle("Add to glyph panel")
             
     def callbackCatNameSelect(self, sender):
         glyphSelection = []
@@ -549,5 +513,5 @@ class Browser(object):
     
 if __name__ == "__main__":
     glyphDictionary = GlyphDict()
-    glyphDictionary = readAGD("AGD.txt", glyphDictionary)
+    glyphDictionary = readUniNames("./data/glyphNamesToUnicode.txt", glyphDictionary)
     browser = Browser(glyphDictionary)
