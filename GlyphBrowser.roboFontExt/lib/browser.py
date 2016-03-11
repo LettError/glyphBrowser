@@ -69,7 +69,7 @@ unicodeCategoryNames = {
     }
 
 
-class AGDGlyph(object):
+class SimpleGlyphName(object):
 
     def __init__(self, name, srcPath):
         self.name = name
@@ -268,7 +268,7 @@ class GlyphDict(dict):
             except ValueError:
                 continue
         for name, value in uniNames.items():
-            g = AGDGlyph(name, None)
+            g = SimpleGlyphName(name, None)
             g.uni = value
             self[name] = g
         
@@ -321,9 +321,13 @@ def readUniNames(path, glyphDictionary=None):
     f.close()
     lines = d.split("\n")
     niceFileName = os.path.basename(path)
-    
+    versionString = "-"
     for l in lines:
-        if l[0] == "#": continue
+        if l[0] == "#":
+            if l.find("GlyphNameFormatter version")!=-1:
+                versionString = l[1:].strip()
+                versionString = versionString.replace("GlyphNameFormatter version", "GNFUL")
+            continue
         if len(l.split(" ")) != 2:
             print l
             continue
@@ -333,12 +337,12 @@ def readUniNames(path, glyphDictionary=None):
         except ValueError:
             print "bah unicode", hexCandidate, name
             continue
-        entryObject = AGDGlyph(name, niceFileName)
+        entryObject = SimpleGlyphName(name, niceFileName)
         entryObject.uni = hexCandidate
         glyphDictionary.update(entryObject)
     for name, glyph in glyphDictionary.items():
         glyph.lookupRefs()
-    return glyphDictionary
+    return versionString, glyphDictionary
        
 
 def findCategory(data, category):
@@ -388,13 +392,13 @@ def sortByUnicode(items, ascending=True):
     return sortedList
 
 class Browser(object):
-    def __init__(self, data):
+    def __init__(self, data, versionString):
         self.data = data
         self.dataByCategory = collectSearchCategories(data)
         self.catNames = self.dataByCategory.keys()
         self.catNames.sort()
         self.currentSelection = []
-        self.w = vanilla.Window((1100, 500), "Glyphname and Unicode Browser using Unicode %s"%unicodedata.unidata_version, minSize=(800, 300))
+        self.w = vanilla.Window((1100, 500), ("Glyphname Browser with Unicode %s and %s"%(unicodedata.unidata_version, versionString)).upper(), minSize=(800, 300))
         columnDescriptions = [
             {'title': "Categories, ranges, namelists", 'key': 'name'},
         ]
@@ -513,5 +517,5 @@ class Browser(object):
     
 if __name__ == "__main__":
     glyphDictionary = GlyphDict()
-    glyphDictionary = readUniNames("./data/glyphNamesToUnicode.txt", glyphDictionary)
-    browser = Browser(glyphDictionary)
+    GNFULversion, glyphDictionary = readUniNames("./data/glyphNamesToUnicode.txt", glyphDictionary)
+    browser = Browser(glyphDictionary, GNFULversion)
