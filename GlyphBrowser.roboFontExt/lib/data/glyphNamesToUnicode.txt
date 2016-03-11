@@ -2156,8 +2156,8 @@ ry-aisign 0B48
 ry-osign 0B4B
 ry-ausign 0B4C
 ry-virama 0B4D
-ry-ai length mark 0B56
-ry-au length mark 0B57
+ry-ailengthmark 0B56
+ry-aulengthmark 0B57
 ry-rra 0B5C
 ry-rha 0B5D
 ry-yya 0B5F
