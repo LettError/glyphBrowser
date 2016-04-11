@@ -398,13 +398,13 @@ class Browser(object):
         self.catNames = self.dataByCategory.keys()
         self.catNames.sort()
         self.currentSelection = []
-        self.w = vanilla.Window((1100, 500), ("Glyphname Browser with Unicode %s and %s"%(unicodedata.unidata_version, versionString)).upper(), minSize=(800, 300))
+        self.w = vanilla.Window((1100, 500), ("Glyphname Browser with Unicode %s and %s"%(unicodedata.unidata_version, versionString)).upper(), minSize=(800, 500))
         columnDescriptions = [
             {'title': "Categories, ranges, namelists", 'key': 'name'},
         ]
-        self.w.catNames = vanilla.List((0,0,220, 0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
+        self.w.catNames = vanilla.List((0,30,220, 0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
         columnDescriptions = [
-            {    'title': "Adobe Glyph Name",
+            {    'title': "Glyph Name",
                  'key': 'name',
                  'width': 220, },
             {    'title': "Unicode",
@@ -417,8 +417,8 @@ class Browser(object):
                  'key': 'uniName',
                      },
             ]
-        self.w.selectedNames = vanilla.List((220,0,-200,0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
-        self.w.selectionUnicodeText = vanilla.EditText((-200, 0, 0, 200), "Selectable Unicode Text")
+        self.w.selectedNames = vanilla.List((220,30,-200,0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
+        self.w.selectionUnicodeText = vanilla.EditText((-200, 30, 0, 200), "Selectable Unicode Text")
         self.w.selectionGlyphNames = vanilla.EditText((-200, 200, 0, 200), "Selectable Glyph Names", sizeStyle="small")
         self.w.addGlyphPanelButton = vanilla.Button((-190, -60, -10, 20), "Add to Glyphpanel", callback=self.callbackAddToNewGlyphPanel)
         self.w.progress = vanilla.TextBox((-190, -35, -10, 40), "", sizeStyle="small")
