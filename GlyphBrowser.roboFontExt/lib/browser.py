@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*-
 import os
 
+import webbrowser
+import urllib
 import unicodeRangeNames
 reload(unicodeRangeNames)
 from unicodeRangeNames import getRangeName, getRangeAndName, getPlaneName
@@ -64,6 +66,8 @@ unicodeCategoryNames = {
         "Zs": "Separator, space",
     }
 
+
+
 def unicodeToChar(uni):
     import struct
     if uni < 0xFFFF:
@@ -103,6 +107,9 @@ class SimpleGlyphName(object):
         # return a unicode string with this character, if possible
         return self.unicodeString
     
+    def asU(self):
+        return "U+%04X"%(self.uni)
+        
     def asDict(self):
         d = {}
         d['name'] = self.name
@@ -396,6 +403,10 @@ def sortByUnicode(items, ascending=True):
     return sortedList
 
 class Browser(object):
+    
+    # this looks like a reasonable unicode reference database.
+    # but it could by any other.
+    lookupURL = u"http://unicode.scarfboy.com/?"
     def __init__(self, data, unicodeVersionString, versionString):
         self.data = data
         self.dataByCategory = collectSearchCategories(data)
@@ -429,7 +440,8 @@ class Browser(object):
         self.w.selectedNames = vanilla.List((225, 30, -205, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
         self.w.selectionUnicodeText = vanilla.EditText((-200, 30, -5, 180), "Selectable Unicode Text")
         self.w.selectionGlyphNames = vanilla.EditText((-200, 215, -5, 200), "Selectable Glyph Names", sizeStyle="small")
-        self.w.addGlyphPanelButton = vanilla.Button((-190, -60, -10, 20), "Add to Glyphpanel", callback=self.callbackAddToNewGlyphPanel)
+        self.w.addGlyphPanelButton = vanilla.Button((-200, -57, -5, 20), "Add to Glyphpanel", callback=self.callbackAddToNewGlyphPanel)
+        self.w.lookupSelected = vanilla.Button((-200, -82, -5, 20), "Lookup", callback=self.callbackLookup)
         self.w.progress = vanilla.TextBox((-190, -35, -10, 40), "", sizeStyle="small")
         self.w.addGlyphPanelButton.enable(False)
         self.w.bind("became main", self.callbackWindowMain)
@@ -441,6 +453,15 @@ class Browser(object):
         items = [dict(name=name) for name in self.catNames]
         self.w.catNames.set(items)
     
+    def callbackLookup(self, sender):
+        lookupThese = []
+        if self.currentSelection:
+            if len(self.currentSelection)!=1: return
+            for glyph in self.currentSelection:
+                lookupThese.append(glyph)
+        url = self.lookupURL + urllib.urlencode(dict(s=",".join([a.asU() for a in lookupThese])))
+        webbrowser.get().open(url)
+        
     def callbackSearch(self, sender):
         searchString = self.w.searchBox.get()
         glyphSelection = findGlyphs(self.data, searchString)
@@ -499,7 +520,12 @@ class Browser(object):
         glyphNames = u""
         selectionString = u""
         self.currentSelection = []
-        for i in sender.getSelection():
+        selected = sender.getSelection()
+        if len(selected) == 1:
+            self.w.lookupSelected.enable(True)
+        else:
+            self.w.lookupSelected.enable(False)
+        for i in selected:
             name = self.w.selectedNames[i]['name']
             selectionString += self.data[name].unicodeString
             glyphNames += "/%s"%name
