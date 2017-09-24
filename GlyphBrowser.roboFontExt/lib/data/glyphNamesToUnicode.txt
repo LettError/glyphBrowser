@@ -1,8 +1,8 @@
 # Glyph Name Formatted Unicode List - GNFUL
-# GlyphNameFormatter version 0.1 - git commit: 374
+# GlyphNameFormatter version 0.1 - git commit: 377
 # Unicode version: Unicode 10.0.0
-# Source code: https://github.com/LettError/glyphNameFormatter/tree/013408f
-# Generated on 2017 09 24 17:20:01
+# Source code: https://github.com/LettError/glyphNameFormatter/tree/304bc24
+# Generated on 2017 09 24 21:45:00
 # <glyphName> <hex unicode> <unicodeCategory>
 #
 # Basic Latin
@@ -6056,38 +6056,38 @@ lightupheavydn 257D So
 heavyleftlightright 257E So
 heavyuplightdn 257F So
 # Block Elements
-upperhalfblock 2580 So
-loweroneeighthblock 2581 So
-loweronequarterblock 2582 So
-lowerthreeeighthsblock 2583 So
-lowerhalfblock 2584 So
-lowerfiveeighthsblock 2585 So
-lowerthreequartersblock 2586 So
-lowerseveneighthsblock 2587 So
-fullblock 2588 So
-leftseveneighthsblock 2589 So
-leftthreequartersblock 258A So
-leftfiveeighthsblock 258B So
-lefthalfblock 258C So
-leftthreeeighthsblock 258D So
-leftonequarterblock 258E So
-leftoneeighthblock 258F So
-righthalfblock 2590 So
-lightshade 2591 So
-mediumshade 2592 So
-darkshade 2593 So
-upperoneeighthblock 2594 So
-rightoneeighthblock 2595 So
-quadrantlowerleft 2596 So
-quadrantlowerright 2597 So
-quadrantupperleft 2598 So
-quadrantupperleftlowerleftlowerright 2599 So
-quadrantupperleftlowerright 259A So
-quadrantupperleftupperrightlowerleft 259B So
-quadrantupperleftupperrightlowerright 259C So
-quadrantupperright 259D So
-quadrantupperrightlowerleft 259E So
-quadrantupperrightlowerleftlowerright 259F So
+upperHalfBlock 2580 So
+lowerOneEighthBlock 2581 So
+lowerOneQuarterBlock 2582 So
+lowerThreeEighthsBlock 2583 So
+lowerHalfBlock 2584 So
+lowerFiveEighthsBlock 2585 So
+lowerThreeQuartersBlock 2586 So
+lowerSevenEighthsBlock 2587 So
+fullBlock 2588 So
+leftSevenEighthsBlock 2589 So
+leftThreeQuartersBlock 258A So
+leftFiveEighthsBlock 258B So
+leftHalfBlock 258C So
+leftThreeEighthsBlock 258D So
+leftOneQuarterBlock 258E So
+leftOneEighthBlock 258F So
+rightHalfBlock 2590 So
+lightShade 2591 So
+mediumShade 2592 So
+darkShade 2593 So
+upperOneEighthBlock 2594 So
+rightOneEighthBlock 2595 So
+quadrantLowerLeft 2596 So
+quadrantLowerRight 2597 So
+quadrantUpperLeft 2598 So
+quadrantUpperLeftAndLowerLeftAndLowerRight 2599 So
+quadrantUpperLeftAndLowerRight 259A So
+quadrantUpperLeftAndUpperRightAndLowerLeft 259B So
+quadrantUpperLeftAndUpperRightAndLowerRight 259C So
+quadrantUpperRight 259D So
+quadrantUpperRightAndLowerLeft 259E So
+quadrantUpperRightAndLowerLeftAndLowerRight 259F So
 # Geometric Shapes
 squareblack 25A0 So
 squarewhite 25A1 So
@@ -6203,7 +6203,7 @@ opposition 260D So
 telephoneblack 260E So
 telephonewhite 260F So
 checkbox 2610 So
-checkboxchekced 2611 So
+checkboxchecked 2611 So
 checkboxx 2612 So
 saltire 2613 So
 umbrellaraindrops 2614 So
