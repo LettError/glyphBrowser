@@ -332,7 +332,6 @@ def readUniNames(path, glyphDictionary=None):
                 unicodeVersionString = l[l.find(":")+1:].strip()
             continue
         if len(l.split(" ")) != 2:
-            print l
             continue
         name, hexCandidate = l.split(" ")
         try: 
@@ -421,6 +420,7 @@ class Browser(object):
                  'key': 'uniName',
                      },
             ]
+        self.w.searchBox = vanilla.SearchBox((-200, 4, -5, 22), "", callback=self.callbackSearch)
         self.w.selectedNames = vanilla.List((220,30,-200,0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
         self.w.selectionUnicodeText = vanilla.EditText((-200, 30, 0, 200), "Selectable Unicode Text")
         self.w.selectionGlyphNames = vanilla.EditText((-200, 200, 0, 200), "Selectable Glyph Names", sizeStyle="small")
@@ -436,6 +436,14 @@ class Browser(object):
         items = [dict(name=name) for name in self.catNames]
         self.w.catNames.set(items)
     
+    def callbackSearch(self, sender):
+        searchString = self.w.searchBox.get()
+        glyphSelection = findGlyphs(self.data, searchString)
+        glyphSelection.sort()
+        items = [g.asDict() for g in glyphSelection]
+        items = sorted(items, key=lambda x: x['uni'], reverse=False)
+        self.w.selectedNames.set(items)
+        
     def callbackAddGlyphsButton(self, sender):
         f = CurrentFont()
         if f is None: return
