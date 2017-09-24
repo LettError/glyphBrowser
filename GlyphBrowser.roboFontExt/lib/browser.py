@@ -1,9 +1,5 @@
 # -*- coding: UTF-8 -*-
 import os
-try:
-    from lib.tools.misc import unicodeToChar
-except ImportError:
-    unicodeToChar = unichr
 
 import unicodeRangeNames
 reload(unicodeRangeNames)
@@ -68,6 +64,12 @@ unicodeCategoryNames = {
         "Zs": "Separator, space",
     }
 
+def unicodeToChar(uni):
+    import struct
+    if uni < 0xFFFF:
+        return unichr(uni)
+    else:
+        return struct.pack('i', uni).decode('utf-32')
 
 class SimpleGlyphName(object):
 
@@ -212,6 +214,9 @@ class SimpleGlyphName(object):
         if self.unicodeCategory is not None:
             if anything.lower() in self.unicodeCategory.lower():
                 return True
+        if self.unicodeName is not None:
+            if anything.lower() in self.unicodeName.lower():
+                return True
         if self.unicodeString is not None:
             if anything == self.unicodeString:
                 return True
@@ -223,13 +228,10 @@ class SimpleGlyphName(object):
     def update(self, other):
         # update this record with values from the other
         # so we can change everything but the name
-        #print 'updating record from', other
         if other.uni is not None:
-            #print "\tupdating uni", other.uni
             self.uni = other.uni
             self.lookupRefs()
         if other.name is not None:
-            #print "\tupdating name", other.name
             self.name = other.name
         if other.sub:
             self.sub = other.sub
@@ -282,7 +284,6 @@ class GlyphDict(dict):
         # option 1: same name, different values
         added = False
         if record.name in self:
-            #print "a checking", record
             # a record exists with the same name
             # update the unicode, other values
             other = self[record.name]
@@ -294,7 +295,6 @@ class GlyphDict(dict):
             return
         # option 2: same unicode, different values, name
         elif record.uni is not None:
-            #print "b checking", record
             if record.uni in self.uniMap:
                 name = self.uniMap[record.uni]
                 glyph = self[name]
@@ -310,7 +310,6 @@ class GlyphDict(dict):
             if added:
                 return
         # option 3: just new glyph
-        #print "c checking", record
         self.uniMap[record.uni] = record.name
         self[record.name] = record
 
@@ -408,9 +407,9 @@ class Browser(object):
         columnDescriptions = [
             {'title': "Categories, ranges, namelists", 'key': 'name'},
         ]
-        self.w.catNames = vanilla.List((0,30,220, 0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
+        self.w.catNames = vanilla.List((5, 30, 215, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
         columnDescriptions = [
-            {    'title': "Glyph Name",
+            {    'title': "GNUFL Glyph Name",
                  'key': 'name',
                  'width': 220, },
             {    'title': "Unicode",
@@ -422,14 +421,14 @@ class Browser(object):
             {    'title': "Char",
                  'key': 'string',
                  'width': 30},
-            {    'title': "Unicode Name",
+            {    'title': "Unicode Description",
                  'key': 'uniName',
                      },
             ]
         self.w.searchBox = vanilla.SearchBox((-200, 4, -5, 22), "", callback=self.callbackSearch)
-        self.w.selectedNames = vanilla.List((220,30,-200,0), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
-        self.w.selectionUnicodeText = vanilla.EditText((-200, 30, 0, 200), "Selectable Unicode Text")
-        self.w.selectionGlyphNames = vanilla.EditText((-200, 200, 0, 200), "Selectable Glyph Names", sizeStyle="small")
+        self.w.selectedNames = vanilla.List((225, 30, -205, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
+        self.w.selectionUnicodeText = vanilla.EditText((-200, 30, -5, 180), "Selectable Unicode Text")
+        self.w.selectionGlyphNames = vanilla.EditText((-200, 215, -5, 200), "Selectable Glyph Names", sizeStyle="small")
         self.w.addGlyphPanelButton = vanilla.Button((-190, -60, -10, 20), "Add to Glyphpanel", callback=self.callbackAddToNewGlyphPanel)
         self.w.progress = vanilla.TextBox((-190, -35, -10, 40), "", sizeStyle="small")
         self.w.addGlyphPanelButton.enable(False)
