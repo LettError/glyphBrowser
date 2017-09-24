@@ -443,6 +443,7 @@ class Browser(object):
         items = [g.asDict() for g in glyphSelection]
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
         self.w.selectedNames.set(items)
+        self.w.catNames.setSelection([])
         
     def callbackAddGlyphsButton(self, sender):
         f = CurrentFont()
