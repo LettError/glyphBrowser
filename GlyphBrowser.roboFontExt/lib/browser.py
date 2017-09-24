@@ -106,6 +106,7 @@ class SimpleGlyphName(object):
         d['name'] = self.name
         d['uni'] = self.uni
         d['string'] = self.unicodeString
+        d['category'] = self.unicodeCategory
         if self.uni is not None:
             d['uniHex'] = "%05x"%self.uni
         else:
@@ -140,7 +141,7 @@ class SimpleGlyphName(object):
             r = self.unicodeRangeName
         else:
             r = "-"
-        return "[AGD: %s %s %s %s]"%(self.name, u, cat, r)
+        return "[Glyph: %s %s %s %s]"%(self.name, u, cat, r)
     
     def lookupRefs(self):
         # find out more things based on the unicode
@@ -149,12 +150,13 @@ class SimpleGlyphName(object):
         try:
             c = unicodeToChar(self.uni)
             self.unicodeString = c
-            self.unicodeCategory = unicodedata.category(c)
-            self.unicodeCategoryName = unicodeCategoryNames.get(self.unicodeCategory)
-            self.unicodeName = unicodedata.name(c)
         except ValueError:
             self.error = True
+        try:
+            self.unicodeName = unicodedata.name(c)
+        except ValueError:
             pass
+        self.unicodeCategoryName = unicodeCategoryNames.get(self.unicodeCategory)
         self.unicodeRange, self.unicodeRangeName = getRangeAndName(self.uni)
     
     def sameRange(self, value):
@@ -199,6 +201,9 @@ class SimpleGlyphName(object):
         
     def match(self, anything):
         # return True if we match any part of this string
+        if self.unicodeCategoryName is not None:
+            if anything in self.unicodeCategoryName:
+                return True
         if anything.lower() in self.name.lower():
             return True
         if self.unicodeRangeName is not None:
@@ -206,9 +211,6 @@ class SimpleGlyphName(object):
                 return True
         if self.unicodeCategory is not None:
             if anything.lower() in self.unicodeCategory.lower():
-                return True
-        if self.unicodeCategoryName is not None:
-            if anything.lower() in self.unicodeCategoryName.lower():
                 return True
         if self.unicodeString is not None:
             if anything == self.unicodeString:
@@ -331,9 +333,9 @@ def readUniNames(path, glyphDictionary=None):
             elif l.find("Unicode version:")!=-1:
                 unicodeVersionString = l[l.find(":")+1:].strip()
             continue
-        if len(l.split(" ")) != 2:
+        if len(l.split(" ")) != 3:
             continue
-        name, hexCandidate = l.split(" ")
+        name, hexCandidate, unicodeCategory = l.split(" ")
         try: 
             hexCandidate = int("0x"+hexCandidate, 16)
         except ValueError:
@@ -341,6 +343,7 @@ def readUniNames(path, glyphDictionary=None):
             continue
         entryObject = SimpleGlyphName(name, niceFileName)
         entryObject.uni = hexCandidate
+        entryObject.unicodeCategory = unicodeCategory
         glyphDictionary.update(entryObject)
     for name, glyph in glyphDictionary.items():
         glyph.lookupRefs()
@@ -413,6 +416,9 @@ class Browser(object):
             {    'title': "Unicode",
                  'key': 'uniHex',
                  'width': 70},
+            {    'title': "Cat",
+                 'key': 'category',
+                 'width': 30},
             {    'title': "Char",
                  'key': 'string',
                  'width': 30},
