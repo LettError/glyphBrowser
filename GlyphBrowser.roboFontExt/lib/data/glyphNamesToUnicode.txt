@@ -1,7 +1,8 @@
 # Glyph Name Formatted Unicode List - GNFUL
-# GlyphNameFormatter version 0.1 - git commit: 360
-# Source code: https://github.com/LettError/glyphNameFormatter/tree/561abba
-# Generated on 2016 04 11 23:09:55
+# GlyphNameFormatter version 0.1 - git commit: 372
+# Unicode version: Unicode 10.0.0
+# Source code: https://github.com/LettError/glyphNameFormatter/tree/2315a0e
+# Generated on 2017 09 24 14:25:46
 # <glyphName> <hex unicode>
 #
 # Basic Latin
@@ -562,7 +563,7 @@ hhook 0266
 henghook 0267
 istroke 0268
 ipa:iota 0269
-Ismall 026A
+ipa:Ismall 026A
 lmiddletilde 026B
 lbelt 026C
 lretroflex 026D
@@ -1527,8 +1528,8 @@ ar:kasratan 064D
 fatha 064E
 damma 064F
 kasra 0650
-shadda 0651
-sukun 0652
+ar:shadda 0651
+ar:sukun 0652
 madda 0653
 hamzaabove 0654
 hamzabelow 0655
@@ -1974,6 +1975,8 @@ beng:currencyoneless 09F8
 beng:sixteencurrencydenominator 09F9
 beng:isshar 09FA
 beng:gandamark 09FB
+beng:vedicanusvara 09FC
+beng:abbreviationsign 09FD
 # Gurmukhi
 guru:adakbindisign 0A01
 guru:bindisign 0A02
@@ -2140,6 +2143,12 @@ gujr:nine 0AEF
 gujr:abbreviation 0AF0
 gujr:rupee 0AF1
 gujr:zha 0AF9
+gujr:sukun 0AFA
+gujr:shadda 0AFB
+gujr:maddah 0AFC
+gujr:three-dotnuktaabove 0AFD
+gujr:circlenuktaabove 0AFE
+gujr:two-circlenuktaabove 0AFF
 # Oriya
 orya:candrabindu 0B01
 orya:anusvara 0B02
@@ -2402,6 +2411,7 @@ telu:fractiontwoforevenpowersoffour 0C7D
 telu:fractionthreeforevenpowersoffour 0C7E
 telu:tuumusign 0C7F
 # Kannada
+knda:signspacingcandrabindu 0C80
 knda:signcandrabindu 0C81
 knda:anusvara 0C82
 knda:visarga 0C83
@@ -2490,6 +2500,7 @@ knda:nine 0CEF
 knda:jihvamuliya 0CF1
 knda:upadhmaniya 0CF2
 # Malayalam
+mlym:combininganusvaraabovesign 0D00
 mlym:candrabindusign 0D01
 mlym:anusvarasign 0D02
 mlym:visargasign 0D03
@@ -2545,6 +2556,8 @@ mlym:ssa 0D37
 mlym:sa 0D38
 mlym:ha 0D39
 mlym:ttta 0D3A
+mlym:verticalbarviramasign 0D3B
+mlym:circularviramasign 0D3C
 mlym:avagrahasign 0D3D
 mlym:aasign 0D3E
 mlym:isign 0D3F
@@ -2561,7 +2574,18 @@ mlym:oosign 0D4B
 mlym:ausign 0D4C
 mlym:viramasign 0D4D
 mlym:dotreph 0D4E
+mlym:parasign 0D4F
+mlym:mchillu 0D54
+mlym:ychillu 0D55
+mlym:lllchillu 0D56
 mlym:aulength 0D57
+mlym:oneone-hundred-and-sixtieth 0D58
+mlym:onefortieth 0D59
+mlym:threeeightieths 0D5A
+mlym:onetwentieth 0D5B
+mlym:onetenth 0D5C
+mlym:threetwentieths 0D5D
+mlym:onefifth 0D5E
 mlym:archaicii 0D5F
 mlym:rrvocal 0D60
 mlym:llvocal 0D61
@@ -2583,6 +2607,9 @@ mlym:onethousand 0D72
 mlym:onequarter 0D73
 mlym:onehalf 0D74
 mlym:threequarters 0D75
+mlym:onesixteenth 0D76
+mlym:oneeighth 0D77
+mlym:threesixteenths 0D78
 mlym:date 0D79
 mlym:nnchillu 0D7A
 mlym:nchillu 0D7B
@@ -3977,6 +4004,7 @@ ve:rotatedardhavisargasign 1CF3
 ve:abovetonecandra 1CF4
 ve:jihvamuliyasign 1CF5
 ve:upadhmaniyasign 1CF6
+ve:atikramasign 1CF7
 ve:ringabovetone 1CF8
 ve:ringabovetonedbl 1CF9
 # Phonetic Extensions
@@ -4228,6 +4256,11 @@ adieresiscmb 1DF2
 odieresiscmb 1DF3
 udieresiscmb 1DF4
 uptackabovecmb 1DF5
+kavykaaboverightcmb 1DF6
+kavykaaboveleftcmb 1DF7
+dotaboveleftcmb 1DF8
+wideinvertedbridgebelowcmb 1DF9
+deletionmarkcmb 1DFB
 doubleinvertedbelowbrevecmb 1DFC
 almostequaltobelowcmb 1DFD
 leftarrowheadabovecmb 1DFE
@@ -4910,6 +4943,7 @@ nordicmark 20BB
 manat 20BC
 ruble 20BD
 lari 20BE
+bitcoin 20BF
 # Letterlike Symbols
 accountof 2100
 addressedsubject 2101
@@ -4994,16 +5028,16 @@ forsamaritan 214F
 # Number Forms
 oneseventh 2150
 oneninth 2151
-onetenth 2152
+nmbr:onetenth 2152
 onethird 2153
 twothirds 2154
-onefifth 2155
+nmbr:onefifth 2155
 twofifths 2156
 threefifths 2157
 fourfifths 2158
 onesixth 2159
 fivesixths 215A
-oneeighth 215B
+nmbr:oneeighth 215B
 threeeighths 215C
 fiveeighths 215D
 seveneighths 215E
@@ -5674,6 +5708,11 @@ blackmediumpointingtriangledown 23F7
 doublebarvertical 23F8
 blackforstopsquare 23F9
 blackcircleforrecord 23FA
+power 23FB
+poweronoff 23FC
+poweron 23FD
+powersleep 23FE
+observereye 23FF
 # Control Pictures
 cntr:null 2400
 cntr:startofheading 2401
@@ -6746,6 +6785,13 @@ capitulum 2E3F
 hyphendbl 2E40
 commareversed 2E41
 quotedbllowreversed 2E42
+dashwithupturnleft 2E43
+suspensiondbl 2E44
+kavykainvertedlow 2E45
+kavykawithkavykaaboveinvertedlow 2E46
+kavykalow 2E47
+kavykawithdotlow 2E48
+stackedcommadbl 2E49
 # CJK Symbols and Punctuation
 ideographicspace 3000
 cjk:ideographiccomma 3001
@@ -7044,6 +7090,7 @@ bopo:v 312A
 bopo:ng 312B
 bopo:gn 312C
 bopo:ih 312D
+bopo:owithdotabove 312E
 # Hangul Compatibility Jamo
 ko:kiyeok 3131
 ko:ssangkiyeok 3132
@@ -7794,6 +7841,7 @@ Hhook A7AA
 Ereversedopen A7AB
 Scriptg A7AC
 Lbelt A7AD
+Ismall A7AE
 Kturned A7B0
 Tturned A7B1
 Jcrossed-tail A7B2
@@ -9488,6 +9536,24 @@ oksquare 1F197
 sossquare 1F198
 upwithexclamationmarksquare 1F199
 vssquare 1F19A
+threedsquare 1F19B
+secondscreensquare 1F19C
+twoksquare 1F19D
+fourksquare 1F19E
+eightksquare 1F19F
+fivepointonesquare 1F1A0
+sevenpointonesquare 1F1A1
+twenty-twopointtwosquare 1F1A2
+sixtypsquare 1F1A3
+onehundredtwentypsquare 1F1A4
+dsquare 1F1A5
+hcsquare 1F1A6
+hdrsquare 1F1A7
+hi-ressquare 1F1A8
+losslesssquare 1F1A9
+shvsquare 1F1AA
+uhdsquare 1F1AB
+vodsquare 1F1AC
 regionalindicatorsymbollettera 1F1E6
 regionalindicatorsymbolletterb 1F1E7
 regionalindicatorsymbolletterc 1F1E8

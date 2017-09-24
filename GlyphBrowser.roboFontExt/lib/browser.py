@@ -322,11 +322,14 @@ def readUniNames(path, glyphDictionary=None):
     lines = d.split("\n")
     niceFileName = os.path.basename(path)
     versionString = "-"
+    unicodeVersionString = "-"
     for l in lines:
         if l[0] == "#":
             if l.find("GlyphNameFormatter version")!=-1:
                 versionString = l[1:].strip()
                 versionString = versionString.replace("GlyphNameFormatter version", "GNFUL")
+            elif l.find("Unicode version:")!=-1:
+                unicodeVersionString = l[l.find(":")+1:].strip()
             continue
         if len(l.split(" ")) != 2:
             print l
@@ -342,7 +345,7 @@ def readUniNames(path, glyphDictionary=None):
         glyphDictionary.update(entryObject)
     for name, glyph in glyphDictionary.items():
         glyph.lookupRefs()
-    return versionString, glyphDictionary
+    return unicodeVersionString, versionString, glyphDictionary
        
 
 def findCategory(data, category):
@@ -392,13 +395,14 @@ def sortByUnicode(items, ascending=True):
     return sortedList
 
 class Browser(object):
-    def __init__(self, data, versionString):
+    def __init__(self, data, unicodeVersionString, versionString):
         self.data = data
         self.dataByCategory = collectSearchCategories(data)
         self.catNames = self.dataByCategory.keys()
         self.catNames.sort()
         self.currentSelection = []
-        self.w = vanilla.Window((1100, 500), ("Glyphname Browser with Unicode %s and %s"%(unicodedata.unidata_version, versionString)).upper(), minSize=(800, 500))
+        self.unicodeVersion = unicodeVersionString
+        self.w = vanilla.Window((1100, 500), ("Glyphname Browser with %s and %s"%(self.unicodeVersion, versionString)).upper(), minSize=(800, 500))
         columnDescriptions = [
             {'title': "Categories, ranges, namelists", 'key': 'name'},
         ]
@@ -517,5 +521,5 @@ class Browser(object):
     
 if __name__ == "__main__":
     glyphDictionary = GlyphDict()
-    GNFULversion, glyphDictionary = readUniNames("./data/glyphNamesToUnicode.txt", glyphDictionary)
-    browser = Browser(glyphDictionary, GNFULversion)
+    UnicodeVersion, GNFULversion, glyphDictionary = readUniNames("./data/glyphNamesToUnicode.txt", glyphDictionary)
+    browser = Browser(glyphDictionary, UnicodeVersion, GNFULversion)
