@@ -201,11 +201,11 @@ class SimpleGlyphName(object):
         
     def match(self, anything):
         # return True if we match any part of this string
+        if anything.lower() in self.name.lower():
+            return True
         if self.unicodeCategoryName is not None:
             if anything in self.unicodeCategoryName:
                 return True
-        if anything.lower() in self.name.lower():
-            return True
         if self.unicodeRangeName is not None:
             if anything.lower() in self.unicodeRangeName.lower():
                 return True
