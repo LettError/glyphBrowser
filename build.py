@@ -7,7 +7,7 @@
 """
 
 import pprint
-import os, shutil
+import os, shutil, time
 import glyphNameFormatter
 
 gnfRoot = os.path.dirname(glyphNameFormatter.__file__)
@@ -37,6 +37,7 @@ for rangeName in getAllRangeNames():
 pyText = []
 pyText.append(u"# -*- coding: UTF-8 -*-")
 pyText.append(u"# Generated from glyphNameFormatter range names")
+pyText.append(u"# Generated on %s" % time.strftime("%Y %m %d %H:%M:%S"))
 pyText.append(u"unicodeRangeNames =" + pprint.pformat(ranges, indent=4))
 
 pyPath = os.path.join(browserRoot, "unicodeRanges.py")
