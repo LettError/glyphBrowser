@@ -14,7 +14,7 @@ gnfRoot = os.path.dirname(glyphNameFormatter.__file__)
 browserRoot = os.path.join(os.getcwd(), "GlyphBrowser.roboFontExt", "lib")
 
 # copy the latest name list
-srcNamePath = os.path.join(gnfRoot, "names", "glyphNamesToUnicode_experimental.txt")
+srcNamePath = os.path.join(gnfRoot, "names", "glyphNamesToUnicodeAndCategories_experimental.txt")
 if os.path.exists(srcNamePath):
     dstNamePth = os.path.join(browserRoot, "data", "glyphNamesToUnicode.txt")
     print "srcNamePath", srcNamePath

@@ -4,6 +4,7 @@ import os
 import webbrowser
 import urllib
 import unicodeRangeNames
+from defconAppKit.windows.baseWindow import BaseWindowController
 reload(unicodeRangeNames)
 from unicodeRangeNames import getRangeName, getRangeAndName, getPlaneName
 import unicodedata
@@ -18,21 +19,13 @@ import vanilla
     that will add the selected glyphs to the current font with the appopriate
     names and unicode values.
     
-    - Just a sketch.
-    - Depends on the AGD.txt file from the ADFDKO.
-    - Should use the unicode wisdom from defcon.
     - Offer the selected glyphs as unicode text.
     - Offer the selected glyphs in glyphname syntax.
     - Add the selected names as new glyphs if they don't already exist.
     - options: 
         - checkbox for overwriting existing glyphs
         - select mark color
-        - larger preview of the unicode string in the list
-        - better display of errors, private use, unencoded glyphs
         
-    
-    20160228 erik
-
 """
 
 
@@ -74,6 +67,122 @@ def unicodeToChar(uni):
         return unichr(uni)
     else:
         return struct.pack('i', uni).decode('utf-32')
+
+
+class AddGlyphsSheet(BaseWindowController):
+    _title = "Add Glyphs"
+
+    def __init__(self,
+            theseGlyphs,
+            parentWindow,
+            cancelCallback,
+            applyCallback,
+            ):
+        self.theseGlyphs = theseGlyphs    # list of these unicode glyph objects
+        self.cancelCallback = cancelCallback
+        self.applyCallback = applyCallback
+        self.buildBaseWindow(parentWindow)
+
+    def callbackCancelButton(self, sender):
+        """ """
+        if self.cancelCallback:
+            self.cancelCallback(None)
+        self.close()
+
+    def callbackApplyButton(self, sender):
+        # see if the current data is any different from the original data
+        
+        self.w.markGlyphsCheck, self.w.selectGlyphsCheck
+        f = CurrentFont()
+        selection = []
+        for glyph in self.theseGlyphs:
+            if not glyph.name in f:
+                f.newGlyph(glyph.name)
+            g = f[glyph.name]
+            if self.w.markGlyphsCheck.get():
+                g.mark = (0, 0.95, 0.95, 1)
+            selection.append(g.name)
+        if self.w.selectGlyphsCheck.get():
+            f.selection = selection            
+        if self.applyCallback:
+            self.applyCallback(None)
+        self.close()
+
+    def _breakCycles(self):
+        self.cancelCallback = None
+        self.applyCallback = None
+        self._fonts = None
+
+    def close(self):
+        self._breakCycles()
+        self.w.close()
+
+    def buildBaseWindow(self, parentWindow):
+        """ Make the base window. """
+        self._dirty = False
+        self._sheetWidth = 315
+        self._sheetHeight = 200
+        if parentWindow is None:
+            self.w = vanilla.Window((self._sheetWidth, self._sheetHeight),
+                title = self._title,
+                closable=False,
+                miniaturizable=False,
+                minSize=(self._sheetWidth, self._sheetHeight),
+                textured=False)
+        else:
+            self.w = vanilla.Sheet((self._sheetWidth, self._sheetHeight),
+                parentWindow,
+                minSize=(self._sheetWidth, self._sheetHeight),
+            )
+        # cancel button
+        self.w.cancelButton = vanilla.Button((-205, -30, 100, 20), 
+            'Cancel',
+            callback=self.callbackCancelButton,
+            sizeStyle='small')
+        self.w.cancelButton.bind(".", ["command"])
+        self.w.cancelButton.bind(unichr(27), [])
+        # ok button
+        self.w.applyButton = vanilla.Button((-100, -30, -10, 20), 
+            'Add Glyphs',
+            callback=self.callbackApplyButton,
+            sizeStyle='small')
+        self.w.setDefaultButton(self.w.applyButton)
+        
+        # get the specialised stuff in
+        self.fillSheet()
+        self.setUpBaseWindowBehavior()
+        #self.refresh()
+        self.w.open()
+    
+    def fillSheet(self):
+
+        columnDescriptions = [
+            {    'title': "Names",
+                 'key': 'name',
+                 #'width': 100, 
+                 },
+            {    'title': "Unicode",
+                 'key': 'uniHex',
+                 #'width': 70
+                 },
+            ]
+
+        text = ""
+        if len(self.theseGlyphs) > 1:
+            text = "Add %d glyphs"%len(self.theseGlyphs)
+        else:
+            text = "Add this glyph"
+        f = CurrentFont()
+        if f.path is not None:
+            text += " to font <%s>"%os.path.basename(f.path)
+        else:
+            text += " to <Unsaved UFO>"
+        text += "."
+        self.w.namesCaption = vanilla.TextBox((40, 30, -10, 20), text)
+        self.w.markGlyphsCheck = vanilla.CheckBox((50, 60, 150, 20), "Mark new glyphs", value=True)
+        self.w.selectGlyphsCheck = vanilla.CheckBox((50, 85, 150, 20), "Select new glyphs", value=True)
+
+
 
 class SimpleGlyphName(object):
 
@@ -420,9 +529,9 @@ class Browser(object):
         ]
         self.w.catNames = vanilla.List((5, 30, 215, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
         columnDescriptions = [
-            {    'title': "GNUFL Glyph Name",
+            {    'title': "Add these glyphs",
                  'key': 'name',
-                 'width': 220, },
+                 'width': 100, },
             {    'title': "Unicode",
                  'key': 'uniHex',
                  'width': 70},
@@ -440,7 +549,7 @@ class Browser(object):
         self.w.selectedNames = vanilla.List((225, 30, -205, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
         self.w.selectionUnicodeText = vanilla.EditText((-200, 30, -5, 180), "Selectable Unicode Text")
         self.w.selectionGlyphNames = vanilla.EditText((-200, 215, -5, 200), "Selectable Glyph Names", sizeStyle="small")
-        self.w.addGlyphPanelButton = vanilla.Button((-200, -57, -5, 20), "Add to Glyphpanel", callback=self.callbackAddToNewGlyphPanel)
+        self.w.addGlyphPanelButton = vanilla.Button((-200, -57, -5, 20), "Add to Font", callback=self.callbackOpenGlyphSheet)
         self.w.lookupSelected = vanilla.Button((-200, -82, -5, 20), "Lookup", callback=self.callbackLookup)
         self.w.progress = vanilla.TextBox((-190, -35, -10, 40), "", sizeStyle="small")
         self.w.addGlyphPanelButton.enable(False)
@@ -470,7 +579,7 @@ class Browser(object):
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
         self.w.selectedNames.set(items)
         self.w.catNames.setSelection([])
-        
+    
     def callbackAddGlyphsButton(self, sender):
         f = CurrentFont()
         if f is None: return
@@ -513,6 +622,20 @@ class Browser(object):
         else:
             self.w.addGlyphPanelButton.enable(False)
         
+    def callbackOpenGlyphSheet(self, sender):
+        theseGlyphs = self.currentSelection
+        self._addGlyphsSheet = AddGlyphsSheet(theseGlyphs,
+            self.w,
+            self.callbackCancelGlyphsSheet,
+            self.callbackApplyGlyphsSheet,
+        )
+    
+    def callbackCancelGlyphsSheet(self, sender):
+        pass
+
+    def callbackApplyGlyphsSheet(self, sender):
+        pass
+
     def callbackGlyphNameSelect(self, sender):
         f = CurrentFont()
         existing = 0
@@ -541,10 +664,6 @@ class Browser(object):
             self.w.progress.set("New glyphs: %d\nExisting: %d"%(new,existing))
         self.w.selectionUnicodeText.set(selectionString)
         self.w.selectionGlyphNames.set("".join(glyphNames))
-        if len(self.currentSelection) == 0:
-            self.w.addGlyphPanelButton.setTitle("Select glyphs")
-        else:
-            self.w.addGlyphPanelButton.setTitle("Add to glyph panel")
             
     def callbackCatNameSelect(self, sender):
         glyphSelection = []

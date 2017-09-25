@@ -1,8 +1,8 @@
 # Glyph Name Formatted Unicode List - GNFUL
-# GlyphNameFormatter version 0.2 - git commit: 383
+# GlyphNameFormatter version 0.28 - git commit: 385
 # Unicode version: Unicode 10.0.0
-# Source code: https://github.com/LettError/glyphNameFormatter/tree/78471b1
-# Generated on 2017 09 25 08:50:42
+# Source code: https://github.com/LettError/glyphNameFormatter/tree/9d7f15e
+# Generated on 2017 09 25 11:09:56
 # <glyphName> <hex unicode> <unicodeCategory>
 #
 # Basic Latin
@@ -9955,7 +9955,7 @@ manWithGuaPiMao 1F472 So
 manWithTurban 1F473 So
 olderMan 1F474 So
 olderWoman 1F475 So
-baby 1F476 So
+misc:baby 1F476 So
 constructionWorker 1F477 So
 princess 1F478 So
 japaneseOgre 1F479 So
@@ -10430,3 +10430,111 @@ personRaisingBothHandsInCelebration 1F64C So
 personFrowning 1F64D So
 personWithPoutingFace 1F64E So
 personWithFoldedHands 1F64F So
+# Transport and Map Symbols
+rocket 1F680 So
+helicopter 1F681 So
+steamLocomotive 1F682 So
+railwayCar 1F683 So
+highSpeedTrain 1F684 So
+highSpeedTrainWithBulletNose 1F685 So
+train 1F686 So
+metro 1F687 So
+lightRail 1F688 So
+station 1F689 So
+tram 1F68A So
+tramCar 1F68B So
+bus 1F68C So
+oncomingBus 1F68D So
+trolleybus 1F68E So
+busStop 1F68F So
+minibus 1F690 So
+ambulance 1F691 So
+fireEngine 1F692 So
+policeCar 1F693 So
+oncomingPoliceCar 1F694 So
+taxi 1F695 So
+oncomingTaxi 1F696 So
+automobile 1F697 So
+oncomingAutomobile 1F698 So
+recreationalVehicle 1F699 So
+deliveryTruck 1F69A So
+articulatedLorry 1F69B So
+tractor 1F69C So
+monorail 1F69D So
+mountainRailway 1F69E So
+suspensionRailway 1F69F So
+mountainCableway 1F6A0 So
+aerialTramway 1F6A1 So
+ship 1F6A2 So
+rowboat 1F6A3 So
+speedboat 1F6A4 So
+horizontalTrafficLight 1F6A5 So
+verticalTrafficLight 1F6A6 So
+constructionSign 1F6A7 So
+policeCarsRevolvingLight 1F6A8 So
+triangularFlagOnPost 1F6A9 So
+door 1F6AA So
+noEntrySign 1F6AB So
+smoking 1F6AC So
+noSmoking 1F6AD So
+putLitterInItsPlace 1F6AE So
+doNotLitter 1F6AF So
+potableWater 1F6B0 So
+nonPotableWater 1F6B1 So
+bicycle 1F6B2 So
+noBicycles 1F6B3 So
+bicyclist 1F6B4 So
+mountainBicyclist 1F6B5 So
+pedestrian 1F6B6 So
+noPedestrians 1F6B7 So
+childrenCrossing 1F6B8 So
+mens 1F6B9 So
+womens 1F6BA So
+restroom 1F6BB So
+trns:baby 1F6BC So
+toilet 1F6BD So
+waterCloset 1F6BE So
+shower 1F6BF So
+bath 1F6C0 So
+bathtub 1F6C1 So
+passportControl 1F6C2 So
+customs 1F6C3 So
+baggageClaim 1F6C4 So
+leftLuggage 1F6C5 So
+triangleWithRoundedCorners 1F6C6 So
+prohibitedSign 1F6C7 So
+circledInformationSource 1F6C8 So
+boys 1F6C9 So
+girls 1F6CA So
+couchAndLamp 1F6CB So
+sleepingAccommodation 1F6CC So
+shoppingBags 1F6CD So
+bellhopBell 1F6CE So
+bed 1F6CF So
+placeOfWorship 1F6D0 So
+octagonalSign 1F6D1 So
+shoppingTrolley 1F6D2 So
+stupa 1F6D3 So
+pagoda 1F6D4 So
+hammerAndWrench 1F6E0 So
+shield 1F6E1 So
+oilDrum 1F6E2 So
+motorway 1F6E3 So
+railwayTrack 1F6E4 So
+motorBoat 1F6E5 So
+upPointingMilitaryAirplane 1F6E6 So
+upPointingAirplane 1F6E7 So
+upPointingSmallAirplane 1F6E8 So
+smallAirplane 1F6E9 So
+northeastPointingAirplane 1F6EA So
+airplaneDeparture 1F6EB So
+airplaneArriving 1F6EC So
+satellite 1F6F0 So
+oncomingFireEngine 1F6F1 So
+dieselLocomotive 1F6F2 So
+passengerShip 1F6F3 So
+scooter 1F6F4 So
+motorScooter 1F6F5 So
+canoe 1F6F6 So
+sled 1F6F7 So
+flyingSaucer 1F6F8 So
