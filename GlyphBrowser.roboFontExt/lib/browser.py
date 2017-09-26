@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*-
 import os
 
+from AppKit import NSFont
+
 import webbrowser
 import urllib
 import unicodeRangeNames
@@ -464,7 +466,16 @@ def readUniNames(path, glyphDictionary=None):
         glyph.lookupRefs()
     return unicodeVersionString, versionString, glyphDictionary
        
-
+def findText(data, text):
+    # find the names for this text
+    results = []
+    need = [ord(c) for c in text]
+    print "need", need
+    for name, glyph in data.items():
+        if glyph.uni in need:
+            results.append(glyph)
+    return sortByUnicode(results)
+    
 def findCategory(data, category):
     results = []
     for name, glyph in data.items():
@@ -522,12 +533,15 @@ class Browser(object):
         self.catNames = self.dataByCategory.keys()
         self.catNames.sort()
         self.currentSelection = []
+        self._typing = False
         self.unicodeVersion = unicodeVersionString
-        self.w = vanilla.Window((1100, 500), ("Glyphname Browser with %s and %s"%(self.unicodeVersion, versionString)).upper(), minSize=(800, 500))
+        topRow = 80
+
+        self.w = vanilla.Window((1100, 500), ("GlyphNameBrowser with %s and %s"%(self.unicodeVersion, versionString)), minSize=(800, 500))
         columnDescriptions = [
             {'title': "Categories, ranges, namelists", 'key': 'name'},
         ]
-        self.w.catNames = vanilla.List((5, 30, 215, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
+        self.w.catNames = vanilla.List((5, topRow, 215, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
         columnDescriptions = [
             {    'title': "Add these glyphs",
                  'key': 'name',
@@ -545,12 +559,16 @@ class Browser(object):
                  'key': 'uniName',
                      },
             ]
-        self.w.searchBox = vanilla.SearchBox((-200, 4, -5, 22), "", callback=self.callbackSearch)
-        self.w.selectedNames = vanilla.List((225, 30, -205, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
-        self.w.selectionUnicodeText = vanilla.EditText((-200, 30, -5, 180), "Selectable Unicode Text")
-        self.w.selectionGlyphNames = vanilla.EditText((-200, 215, -5, 200), "Selectable Glyph Names", sizeStyle="small")
-        self.w.addGlyphPanelButton = vanilla.Button((-200, -57, -5, 20), "Add to Font", callback=self.callbackOpenGlyphSheet)
-        self.w.lookupSelected = vanilla.Button((-200, -82, -5, 20), "Lookup", callback=self.callbackLookup)
+        self.w.searchBox = vanilla.SearchBox((-200, topRow, -5, 22), "", callback=self.callbackSearch)
+        self.w.selectedNames = vanilla.List((225, topRow, -205, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
+        self.w.selectionUnicodeText = vanilla.EditText((5, 5, -5, topRow-10), placeholder="GlyphNameBrowser", callback=self.callbackEditUnicodeText)
+        self.w.selectionGlyphNames = vanilla.EditText((-200, topRow+28, -5, -95), "Selectable Glyph Names", sizeStyle="small")
+        tf = self.w.selectionUnicodeText.getNSTextField()
+        nsBig = NSFont.systemFontOfSize_(50)
+        tf.setFont_(nsBig)
+
+        self.w.addGlyphPanelButton = vanilla.Button((-200, -65, -5, 20), "Add to Font", callback=self.callbackOpenGlyphSheet)
+        self.w.lookupSelected = vanilla.Button((-200, -90, -5, 20), "Lookup", callback=self.callbackLookup)
         self.w.progress = vanilla.TextBox((-190, -35, -10, 40), "", sizeStyle="small")
         self.w.addGlyphPanelButton.enable(False)
         self.w.bind("became main", self.callbackWindowMain)
@@ -570,8 +588,26 @@ class Browser(object):
                 lookupThese.append(glyph)
         url = self.lookupURL + urllib.urlencode(dict(s=",".join([a.asU() for a in lookupThese])))
         webbrowser.get().open(url)
+    
+    def callbackEditUnicodeText(self, sender):
+        # this is the callback for the unicode textbox.
+        # if text is edited here, find the glyphs that are used in the text
+        # and add those to the selection. This way we can quickly add characters
+        # from cut / paste text to the selection
+        text = sender.get()
+        print 'text', text
+        self._typing = True
+        if text:
+            glyphSelection = findText(self.data, text)
+            glyphSelection.sort()
+            items = [g.asDict() for g in glyphSelection]
+            items = sorted(items, key=lambda x: x['uni'], reverse=False)
+            self.w.selectedNames.set(items)
+            # self.w.catNames.setSelection([])
+        self._typing = False
         
     def callbackSearch(self, sender):
+        # get the searchstring from the box and try to match as many characters as possible,
         searchString = self.w.searchBox.get()
         glyphSelection = findGlyphs(self.data, searchString)
         glyphSelection.sort()
@@ -662,7 +698,8 @@ class Browser(object):
             self.w.progress.set("")
         else:
             self.w.progress.set("New glyphs: %d\nExisting: %d"%(new,existing))
-        self.w.selectionUnicodeText.set(selectionString)
+        if not self._typing:
+            self.w.selectionUnicodeText.set(selectionString)
         self.w.selectionGlyphNames.set("".join(glyphNames))
             
     def callbackCatNameSelect(self, sender):
