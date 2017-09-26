@@ -16,3 +16,8 @@ A RoboFont extension for browsing and selecting unicode values, glyphnames, cate
 * More support for Unicode ranges
 * Large preview of selected characters
 * Shows Unicode categories for more characters
+
+## Problems?
+
+* If you find a problem with the interface, the actions in RoboFont, etc. raise an issue here: https://github.com/LettError/glyphBrowser/issues
+* if you find a problem with one of the glyph names, would like to see support for a specific range or something like that, please raise an issue here: https://github.com/LettError/glyphNameFormatter/issues
