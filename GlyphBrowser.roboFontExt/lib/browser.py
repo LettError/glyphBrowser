@@ -101,6 +101,7 @@ class AddGlyphsSheet(BaseWindowController):
             if not glyph.name in f:
                 f.newGlyph(glyph.name)
             g = f[glyph.name]
+            g.unicode = glyph.uni
             if self.w.markGlyphsCheck.get():
                 g.mark = (0, 0.95, 0.95, 1)
             selection.append(g.name)
