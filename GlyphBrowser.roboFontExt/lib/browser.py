@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 import os
 
-from AppKit import NSFont
+from AppKit import NSFont, NSFocusRingTypeNone
 
 import webbrowser
 import urllib
@@ -559,6 +559,9 @@ class Browser(object):
         self.w.searchBox = vanilla.SearchBox((-200, topRow, -5, 22), "", callback=self.callbackSearch)
         self.w.selectedNames = vanilla.List((catWidth+10, topRow, -205, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
         self.w.selectionUnicodeText = vanilla.EditText((0, 0, -0, topRow-5), placeholder="GlyphNameBrowser", callback=self.callbackEditUnicodeText)
+        s = self.w.selectionUnicodeText.getNSTextField()
+        s.setFocusRingType_(NSFocusRingTypeNone)
+
         self.w.selectionGlyphNames = vanilla.EditText((-200, topRow+28, -5, -95), "Selectable Glyph Names", sizeStyle="small")
         self.checkSampleSize()
         self.w.addGlyphPanelButton = vanilla.Button((-200, -65, -5, 20), "Add to Font", callback=self.callbackOpenGlyphSheet)
@@ -572,10 +575,18 @@ class Browser(object):
     
     def checkSampleSize(self):
         text = self.w.selectionUnicodeText.get()
-        if len(text) < 40:
-            fontSize = 50
+        minFontSize = 20
+        maxFontSize = 50
+        charsForLarge = 35
+        charsForSmall = 50
+        
+        if len(text) < charsForLarge:
+            fontSize = maxFontSize
+        elif len(text) > charsForSmall:
+            fontSize = minFontSize
         else:
-            fontSize = 20
+            fs = (len(text)-charsForLarge)/(charsForSmall-charsForLarge)
+            fontSize = maxFontSize + fs * (minFontSize-maxFontSize)
         tf = self.w.selectionUnicodeText.getNSTextField()
         nsBig = NSFont.systemFontOfSize_(fontSize)
         tf.setFont_(nsBig)
