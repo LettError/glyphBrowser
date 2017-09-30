@@ -210,14 +210,18 @@ class SimpleGlyphName(object):
     def asU(self):
         return "U+%04X"%(self.uni)
         
-    def asDict(self, fontUnicodes):
+    def asDict(self, fontUnicodes, fontNames):
         d = {}
         d['name'] = self.name
         d['uni'] = self.uni
         if self.uni in fontUnicodes:
-            d['infont'] = u"✅"
+            d['unicodeinfont'] = u"•"    # 🔢
         else:
-            d['infont'] = ""
+            d['unicodeinfont'] = ""
+        if self.name in fontNames:
+            d['nameinfont'] = u"•"    # 🔤
+        else:
+            d['nameinfont'] = ""
         d['string'] = self.unicodeString
         d['category'] = self.unicodeCategory
         if self.uni is not None:
@@ -536,11 +540,15 @@ class Browser(object):
             {'title': "Categories, ranges, namelists", 'key': 'name'},
         ]
         self.w.catNames = vanilla.List((5, topRow, catWidth, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
+        charWidth = 18
         columnDescriptions = [
-            {    'title': "",
-                 'key': 'infont',
-                 'width': 30},
-            {    'title': "Add these glyphs",
+            {    'title': "n",
+                 'key': 'nameinfont',
+                 'width': charWidth},
+            {    'title': "U",
+                 'key': 'unicodeinfont',
+                 'width': charWidth},
+            {    'title': "GNUFL name",
                  'key': 'name',
                  'width': 100, },
             {    'title': "Unicode",
@@ -618,7 +626,7 @@ class Browser(object):
         if text:
             glyphSelection = findText(self.data, text)
             glyphSelection.sort()
-            items = [g.asDict(self._unicodes) for g in glyphSelection]
+            items = [g.asDict(self._unicodes, self._names) for g in glyphSelection]
             items = sorted(items, key=lambda x: x['uni'], reverse=False)
             self.w.selectedNames.set(items)
         self.w.selectionUnicodeText.set(text)
@@ -631,7 +639,7 @@ class Browser(object):
         searchString = self.w.searchBox.get()
         glyphSelection = findGlyphs(self.data, searchString)
         glyphSelection.sort()
-        items = [g.asDict(self._unicodes) for g in glyphSelection]
+        items = [g.asDict(self._unicodes, self._names) for g in glyphSelection]
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
         self.w.selectedNames.set(items)
         self.w.catNames.setSelection([])
@@ -677,9 +685,11 @@ class Browser(object):
         if f is not None:
             self.w.addGlyphPanelButton.enable(True)
             self._unicodes = list(set([g.unicode for g in f]))
+            self._names = f.keys()
         else:
             self.w.addGlyphPanelButton.enable(False)
             self._unicodes = []
+            self._names = []
         self.checkSampleSize()
         
     def callbackOpenGlyphSheet(self, sender):
@@ -737,7 +747,7 @@ class Browser(object):
                 if glyph not in glyphSelection:
                     glyphSelection.append(glyph)
         glyphSelection.sort()
-        items = [g.asDict(self._unicodes) for g in glyphSelection]
+        items = [g.asDict(self._unicodes, self._names) for g in glyphSelection]
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
         self.w.selectedNames.set(items)
     
