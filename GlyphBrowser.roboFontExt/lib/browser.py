@@ -270,7 +270,7 @@ class SimpleGlyphName(object):
         except ValueError:
             self.error = True
         try:
-            self.unicodeName = unicodedata.name(c)
+            self.unicodeName = unicodedata.name(c ).lower()
         except ValueError:
             pass
         self.unicodeCategoryName = unicodeCategoryNames.get(self.unicodeCategory)
@@ -293,7 +293,7 @@ class SimpleGlyphName(object):
             allCats.append(u"⋯\tNo unicode")
         if self.unicodeRangeName is not None:
             a, b = self.unicodeRange
-            allCats.append(u"%06X-%06X\t%s"%(a, b, self.unicodeRangeName))
+            allCats.append(u"%05X-%05X\t%s"%(a, b, self.unicodeRangeName))
         if self.unicodeCategoryName is not None:
             allCats.append(u"📕\t"+ self.unicodeCategoryName)
         if self.uni is not None:
@@ -535,7 +535,7 @@ class Browser(object):
         topRow = 80
         catWidth = 320
 
-        self.w = vanilla.Window((1100, 500), ("GlyphNameBrowser with %s and %s"%(self.unicodeVersion, versionString)), minSize=(800, 500))
+        self.w = vanilla.Window((1200, 500), ("GlyphNameBrowser with %s and %s"%(self.unicodeVersion, versionString)), minSize=(800, 500))
         columnDescriptions = [
             {'title': "Categories, ranges, namelists", 'key': 'name'},
         ]
@@ -550,7 +550,7 @@ class Browser(object):
                  'width': charWidth},
             {    'title': "GNUFL name",
                  'key': 'name',
-                 'width': 100, },
+                 'width': 120, },
             {    'title': "Unicode",
                  'key': 'uniHex',
                  'width': 70},
