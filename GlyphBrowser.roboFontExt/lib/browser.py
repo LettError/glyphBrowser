@@ -62,14 +62,13 @@ unicodeCategoryNames = {
     }
 
 
-
+	
 def unicodeToChar(uni):
     import struct
     if uni < 0xFFFF:
         return unichr(uni)
     else:
         return struct.pack('i', uni).decode('utf-32')
-
 
 class AddGlyphsSheet(BaseWindowController):
     _title = "Add Glyphs"
@@ -98,13 +97,16 @@ class AddGlyphsSheet(BaseWindowController):
         f = CurrentFont()
         selection = []
         for glyph in self.theseGlyphs:
-            if not glyph.name in f:
-                f.newGlyph(glyph.name)
-            g = f[glyph.name]
-            g.unicode = glyph.uni
-            if self.w.markGlyphsCheck.get():
-                g.mark = (0, 0.95, 0.95, 1)
-            selection.append(g.name)
+            variantNames = glyph.getAllNames()
+            for variantName in variantNames:
+                if not variantName in f:
+                    f.newGlyph(variantName)
+                g = f[variantName]
+                if variantName == variantNames[0]:
+                    g.unicode = glyph.uni
+                if self.w.markGlyphsCheck.get():
+                    g.mark = (0, 0.95, 0.95, 1)
+                selection.append(variantName)
         if self.w.selectGlyphsCheck.get():
             f.selection = selection            
         if self.applyCallback:
@@ -193,6 +195,7 @@ class SimpleGlyphName(object):
         self.typ = None    # BE tag
         self.con = None    # BE tag, connection
         self.lan = None    # BE tag, language
+        self.jT = None
         
         self.other = {} # Hash of any unknown tags
         
@@ -202,6 +205,39 @@ class SimpleGlyphName(object):
         self.unicodeCategoryName = None
         self.unicodeString = ""
         self.unicodeName = None
+
+    def getAllNames(self):
+        # based on the category data, give suggestion for which extensions we need for any unicode
+        extensions = {
+            # XXXX no idea if it works this way...
+            #   D Dual_Joining
+            # 		&----G----&
+            'D': ['isol', 'ini', 'medi', 'fina'],
+            #   C Join_Causing
+            # 		&----G----&		????
+            'C': [         					   ],
+            #   R Right_Joining
+            # 		   x G----&
+            'R': ['isol', 				 'fina'],
+            #   L Left_Joining
+            # 		&----G x
+            'L': ['isol', 'ini',		 'fina'],
+            #   U Non_Joining
+            # 	       x G x
+            'U': [         					   ],
+            #   T Transparent
+            # 	       x G x
+            'T': [         					   ],
+        }
+        
+        if self.joiningType is not None:
+            variants = []
+            ext = extensions.get(self.joiningType)
+            if ext:
+                for e in ext:
+                    variants.append("%s.%s"%(self.name, e))
+                return variants
+        return [self.name]
                 
     def uniString(self):
         # return a unicode string with this character, if possible
@@ -210,10 +246,14 @@ class SimpleGlyphName(object):
     def asU(self):
         return "U+%04X"%(self.uni)
         
-    def asDict(self, fontUnicodes, fontNames):
+    def asDict(self, fontUnicodes, fontNames, joiningTypes):
         d = {}
         d['name'] = self.name
         d['uni'] = self.uni
+        if self.joiningType is not None:
+            d['joiningType'] = self.joiningType
+        else:
+            d['joiningType'] = ""
         if self.uni in fontUnicodes:
             d['unicodeinfont'] = u"•"    # 🔢
         else:
@@ -293,7 +333,7 @@ class SimpleGlyphName(object):
             allCats.append(u"⋯\tNo unicode")
         if self.unicodeRangeName is not None:
             a, b = self.unicodeRange
-            allCats.append(u"%05X-%05X\t%s"%(a, b, self.unicodeRangeName))
+            allCats.append(u"%05X\t%05X\t%s"%(a, b, self.unicodeRangeName))
         if self.unicodeCategoryName is not None:
             allCats.append(u"📕\t"+ self.unicodeCategoryName)
         if self.uni is not None:
@@ -302,10 +342,12 @@ class SimpleGlyphName(object):
             allCats.append(u"☰\t"+s)
         if "_" in self.name:
             allCats.append(u"f_f_l\tCombined glyphs")
+        #if ":" in self.name:            
+        #    allCats.append(u"📎\t%s"%self.name.split(":")[0])
         if u"." in self.name and self.name[0]!=u".":
             # catch glyph names with extensions, but not .notdef
             extension = self.name.split(".")[-1]
-            allCats.append(u"…\t"+extension)
+            allCats.append(u"…\t."+extension)
         return allCats
         
     def matchCategory(self, catName):
@@ -336,6 +378,10 @@ class SimpleGlyphName(object):
         if self.unicodeString is not None:
             if anything == self.unicodeString:
                 return True
+        if self.uni is not None:
+            # search hex values
+            if anything in hex(self.uni):
+                return True
         for s in self.set:
             if anything in s:
                 return True
@@ -347,6 +393,8 @@ class SimpleGlyphName(object):
         if other.uni is not None:
             self.uni = other.uni
             self.lookupRefs()
+        if other.joiningType is not None:
+            self.joiningType = other.joiningType
         if other.name is not None:
             self.name = other.name
         if other.sub:
@@ -429,8 +477,23 @@ class GlyphDict(dict):
         self.uniMap[record.uni] = record.name
         self[record.name] = record
 
+def readJoiningTypes(path):
+    # read the joiningTypes.txt
+    joiningTypes = {}
+    f = open(path, 'r')
+    d = f.read()
+    f.close()
+    lines = d.split("\n")
+    for l in lines:
+        if not l: continue
+        if l[0] == "#": continue
+        parts = l.split("\t")
+        uni = int('0x'+parts[0], 0)
+        jT = parts[1]
+        joiningTypes[uni] = jT
+    return joiningTypes
 
-def readUniNames(path, glyphDictionary=None):
+def readUniNames(path, glyphDictionary=None, joiningTypes=None):
     if glyphDictionary is None:
         glyphDictionary = GlyphDict()
     f = open(path, 'r')
@@ -459,6 +522,8 @@ def readUniNames(path, glyphDictionary=None):
         entryObject = SimpleGlyphName(name, niceFileName)
         entryObject.uni = hexCandidate
         entryObject.unicodeCategory = unicodeCategory
+        if joiningTypes is not None:
+            entryObject.joiningType = joiningTypes.get(hexCandidate)
         glyphDictionary.update(entryObject)
     for name, glyph in glyphDictionary.items():
         glyph.lookupRefs()
@@ -524,9 +589,13 @@ class Browser(object):
     # this looks like a reasonable unicode reference database.
     # but it could by any other.
     lookupURL = u"http://unicode.scarfboy.com/?"
-    def __init__(self, data, unicodeVersionString, versionString):
+    def __init__(self, data, unicodeVersionString, versionString, joiningTypes=None):
         self.data = data
         self.dataByCategory = collectSearchCategories(data)
+        if joiningTypes is None:
+            self.joiningTypes = {}
+        else:
+            self.joiningTypes = joiningTypes
         self.catNames = self.dataByCategory.keys()
         self.catNames.sort()
         self.currentSelection = []
@@ -537,7 +606,14 @@ class Browser(object):
 
         self.w = vanilla.Window((1200, 500), ("GlyphNameBrowser with %s and %s"%(self.unicodeVersion, versionString)), minSize=(800, 500))
         columnDescriptions = [
-            {'title': "Categories, ranges, namelists", 'key': 'name'},
+            {    'title': "1",
+                 'key': 'col1',
+                 'width': 50},
+            {    'title': "2",
+                 'key': 'col2',
+                 'width': 50},
+            {    'title': "Categories, ranges, namelists",
+                    'key': 'name'},
         ]
         self.w.catNames = vanilla.List((5, topRow, catWidth, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
         charWidth = 18
@@ -550,12 +626,15 @@ class Browser(object):
                  'width': charWidth},
             {    'title': "GNUFL name",
                  'key': 'name',
-                 'width': 120, },
+                 'width': 200, },
             {    'title': "Unicode",
                  'key': 'uniHex',
                  'width': 70},
             {    'title': "Cat",
                  'key': 'category',
+                 'width': 30},
+            {    'title': "jT",
+                 'key': 'joiningType',
                  'width': 30},
             {    'title': "Char",
                  'key': 'string',
@@ -600,7 +679,23 @@ class Browser(object):
         tf.setFont_(nsBig)
 
     def update(self):
-        items = [dict(name=name) for name in self.catNames]
+        items = []
+        for name in self.catNames:
+            p = name.split("\t")
+            c1 = ""
+            c2 = ""
+            name = ""
+            if len(p )==3:
+                name = p[-1]
+                c2 = p[-2]
+                c1 = p[-3]
+            elif len(p )==2:
+                name = p[-1]
+                c2 = p[-2]
+            d = dict(col1=c1, col2=c2, name=name)
+            print d
+            items.append(d)
+        #items = [dict(name=name) for name in self.catNames]
         self.w.catNames.set(items)
         self.checkSampleSize()
     
@@ -626,7 +721,7 @@ class Browser(object):
         if text:
             glyphSelection = findText(self.data, text)
             glyphSelection.sort()
-            items = [g.asDict(self._unicodes, self._names) for g in glyphSelection]
+            items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in glyphSelection]
             items = sorted(items, key=lambda x: x['uni'], reverse=False)
             self.w.selectedNames.set(items)
         self.w.selectionUnicodeText.set(text)
@@ -639,45 +734,10 @@ class Browser(object):
         searchString = self.w.searchBox.get()
         glyphSelection = findGlyphs(self.data, searchString)
         glyphSelection.sort()
-        items = [g.asDict(self._unicodes, self._names) for g in glyphSelection]
+        items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in glyphSelection]
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
         self.w.selectedNames.set(items)
         self.w.catNames.setSelection([])
-    
-    def callbackAddGlyphsButton(self, sender):
-        f = CurrentFont()
-        if f is None: return
-        actualCount = 0
-        if self.currentSelection:
-            for glyph in self.currentSelection:
-                if glyph.name in f:
-                    # skip existing ?
-                    self.w.progress.set("skipping %s"%glyph.name)
-                    continue
-                f.newGlyph(glyph.name)
-                g = f[glyph.name]
-                g.unicode = glyph.uni
-                self.w.progress.set("added %s"%glyph.name)
-                actualCount += 1
-        self.w.progress.set("%d glyphs added"%actualCount)
-
-    def callbackAddToNewGlyphPanel(self, sender):
-        #glyphs = [
-        #    "Amacron=A+macron|0100" # mss handig want AGD heeft ook cmp support
-        #]
-        from mojo.UI import CurrentFontWindow
-        f = CurrentFont()
-        if f is None: return
-        glyphs = []
-        if self.currentSelection:
-            for glyph in self.currentSelection:
-                if glyph.name in f:
-                    # skip existing ?
-                    self.w.progress.set("skipping %s"%glyph.name)
-                    continue
-                glyphs.append(u"%s|%04x"%(glyph.name, glyph.uni))
-        controller = CurrentFontWindow()
-        controller.addGlyphs(glyphs)
         
     def callbackWindowMain(self, sender):
         f = CurrentFont()
@@ -720,13 +780,15 @@ class Browser(object):
             self.w.lookupSelected.enable(False)
         for i in selected:
             name = self.w.selectedNames[i]['name']
+            glyphVariantNames = self.data[name].getAllNames()
             selectionString += self.data[name].unicodeString
-            glyphNames += "/%s"%name
-            if f is not None:
-                if name in f:
-                    existing += 1
-                else:
-                    new += 1
+            for variantName in glyphVariantNames:
+                glyphNames += "/%s "%variantName
+                if f is not None:
+                    if variantName in f:
+                        existing += 1
+                    else:
+                        new += 1
             self.currentSelection.append(self.data[name])    # means they're not sorted. Problem?
         if new == 0 and existing == 0:         
             self.w.progress.set("")
@@ -747,11 +809,16 @@ class Browser(object):
                 if glyph not in glyphSelection:
                     glyphSelection.append(glyph)
         glyphSelection.sort()
-        items = [g.asDict(self._unicodes, self._names) for g in glyphSelection]
+        items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in glyphSelection]
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
         self.w.selectedNames.set(items)
     
 if __name__ == "__main__":
     glyphDictionary = GlyphDict()
-    UnicodeVersion, GNFULversion, glyphDictionary = readUniNames("./data/glyphNamesToUnicode.txt", glyphDictionary)
-    browser = Browser(glyphDictionary, UnicodeVersion, GNFULversion)
+    joiningTypes = readJoiningTypes("./data/joiningTypes.txt")
+    UnicodeVersion, GNFULversion, glyphDictionary = readUniNames("./data/glyphNamesToUnicode.txt", glyphDictionary, joiningTypes)
+    
+    for k, v in glyphDictionary.items()[:100]:
+        print k, v.getAllNames()
+
+    browser = Browser(glyphDictionary, UnicodeVersion, GNFULversion, joiningTypes)
