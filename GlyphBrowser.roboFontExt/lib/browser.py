@@ -606,10 +606,10 @@ class Browser(object):
 
         self.w = vanilla.Window((1200, 500), ("GlyphNameBrowser with %s and %s"%(self.unicodeVersion, versionString)), minSize=(800, 500))
         columnDescriptions = [
-            {    'title': "1",
+            {    'title': u"",
                  'key': 'col1',
                  'width': 50},
-            {    'title': "2",
+            {    'title': u"",
                  'key': 'col2',
                  'width': 50},
             {    'title': "Categories, ranges, namelists",
@@ -618,10 +618,10 @@ class Browser(object):
         self.w.catNames = vanilla.List((5, topRow, catWidth, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
         charWidth = 18
         columnDescriptions = [
-            {    'title': "n",
+            {    'title': u"❡",
                  'key': 'nameinfont',
                  'width': charWidth},
-            {    'title': "U",
+            {    'title': "#",
                  'key': 'unicodeinfont',
                  'width': charWidth},
             {    'title': "GNUFL name",
@@ -645,7 +645,7 @@ class Browser(object):
             ]
         self.w.searchBox = vanilla.SearchBox((-200, topRow, -5, 22), "", callback=self.callbackSearch)
         self.w.selectedNames = vanilla.List((catWidth+10, topRow, -205, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
-        self.w.selectionUnicodeText = vanilla.EditText((0, 0, -0, topRow-5), placeholder="GlyphNameBrowser", callback=self.callbackEditUnicodeText)
+        self.w.selectionUnicodeText = vanilla.EditText((0, 0, -0, topRow-5), placeholder=u" ✔︎ɢʟʏᴘʜʙʀᴏᴡsᴇʀ", callback=self.callbackEditUnicodeText)
         s = self.w.selectionUnicodeText.getNSTextField()
         s.setFocusRingType_(NSFocusRingTypeNone)
 
@@ -659,6 +659,7 @@ class Browser(object):
         self.w.setDefaultButton(self.w.addGlyphPanelButton)
         self.update()
         self.w.open()
+        self.w.catNames.setSelection([0])
     
     def checkSampleSize(self):
         text = self.w.selectionUnicodeText.get()
@@ -818,7 +819,4 @@ if __name__ == "__main__":
     joiningTypes = readJoiningTypes("./data/joiningTypes.txt")
     UnicodeVersion, GNFULversion, glyphDictionary = readUniNames("./data/glyphNamesToUnicode.txt", glyphDictionary, joiningTypes)
     
-    for k, v in glyphDictionary.items()[:100]:
-        print k, v.getAllNames()
-
     browser = Browser(glyphDictionary, UnicodeVersion, GNFULversion, joiningTypes)
