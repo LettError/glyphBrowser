@@ -235,7 +235,10 @@ class SimpleGlyphName(object):
             ext = extensions.get(self.joiningType)
             if ext:
                 for e in ext:
-                    variants.append("%s.%s"%(self.name, e))
+                    if e != "isol":
+                        variants.append("%s.%s"%(self.name, e))
+                    else:                    
+                        variants.append(self.name)
                 return variants
         return [self.name]
                 
