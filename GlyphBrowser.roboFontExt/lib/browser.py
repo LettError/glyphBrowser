@@ -268,7 +268,7 @@ class SimpleGlyphName(object):
         d['string'] = self.unicodeString
         d['category'] = self.unicodeCategory
         if self.uni is not None:
-            d['uniHex'] = "%05x"%self.uni
+            d['uniHex'] = "%05X"%self.uni
         else:
             d['uniHex'] = ""
         d["parts"] = ""
@@ -632,7 +632,7 @@ class Browser(object):
                  'width': 200, },
             {    'title': "Unicode",
                  'key': 'uniHex',
-                 'width': 70},
+                 'width': 50},
             {    'title': "Cat",
                  'key': 'category',
                  'width': 30},
