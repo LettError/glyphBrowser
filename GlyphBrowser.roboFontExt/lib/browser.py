@@ -697,7 +697,6 @@ class Browser(object):
                 name = p[-1]
                 c2 = p[-2]
             d = dict(col1=c1, col2=c2, name=name)
-            print d
             items.append(d)
         #items = [dict(name=name) for name in self.catNames]
         self.w.catNames.set(items)
