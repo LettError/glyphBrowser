@@ -1,7 +1,8 @@
 # -*- coding: UTF-8 -*-
 import os
 
-from AppKit import NSFont, NSFocusRingTypeNone
+from AppKit import NSFont, NSFocusRingTypeNone, NSPredicate
+from mojo.UI import CurrentFontWindow, SmartSet
 
 import webbrowser
 import urllib
@@ -212,16 +213,16 @@ class SimpleGlyphName(object):
             # XXXX no idea if it works this way...
             #   D Dual_Joining
             # 		&----G----&
-            'D': ['isol', 'ini', 'medi', 'fina'],
+            'D': ['ini', 'medi', 'fina'],
             #   C Join_Causing
             # 		&----G----&		????
             'C': [         					   ],
             #   R Right_Joining
             # 		   x G----&
-            'R': ['isol', 				 'fina'],
+            'R': [ 				 'fina'],
             #   L Left_Joining
             # 		&----G x
-            'L': ['isol', 'ini',		 'fina'],
+            'L': ['ini',		 'fina'],
             #   U Non_Joining
             # 	       x G x
             'U': [         					   ],
@@ -235,10 +236,7 @@ class SimpleGlyphName(object):
             ext = extensions.get(self.joiningType)
             if ext:
                 for e in ext:
-                    if e != "isol":
-                        variants.append("%s.%s"%(self.name, e))
-                    else:                    
-                        variants.append(self.name)
+                    variants.append("%s.%s"%(self.name, e))
                 return variants
         return [self.name]
                 
@@ -652,7 +650,7 @@ class Browser(object):
         s = self.w.selectionUnicodeText.getNSTextField()
         s.setFocusRingType_(NSFocusRingTypeNone)
 
-        self.w.selectionGlyphNames = vanilla.EditText((-200, topRow+28, -5, -95), "Selectable Glyph Names", sizeStyle="small")
+        self.w.selectionGlyphNames = vanilla.EditText((-200, topRow+28, -5, -300), "Selectable Glyph Names", sizeStyle="small")
         self.checkSampleSize()
         self.w.addGlyphPanelButton = vanilla.Button((-200, -65, -5, 20), "Add to Font", callback=self.callbackOpenGlyphSheet)
         self.w.lookupSelected = vanilla.Button((-200, -90, -5, 20), "Lookup", callback=self.callbackLookup)
@@ -741,6 +739,9 @@ class Browser(object):
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
         self.w.selectedNames.set(items)
         self.w.catNames.setSelection([])
+    
+    def setCurrentFontWindowSelection(self):
+        self.currentSelection
         
     def callbackWindowMain(self, sender):
         f = CurrentFont()
@@ -749,10 +750,28 @@ class Browser(object):
             self.w.addGlyphPanelButton.enable(True)
             self._unicodes = list(set([g.unicode for g in f]))
             self._names = f.keys()
+
+            # show the names that are selected in the font
+            if f.selection:
+                names = []
+                for name in f.selection:
+                    g = f[name]
+                    if g.unicode:
+                        uniName = self.data.getUniMap().get(g.unicode)
+                        if uniName is not None:
+                            nameObj = self.data[uniName]
+                            if nameObj is not None:
+                                names.append(nameObj)
+                if names:
+                    self.currentSelection = names
         else:
             self.w.addGlyphPanelButton.enable(False)
             self._unicodes = []
             self._names = []
+        
+        items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in self.currentSelection]
+        items = sorted(items, key=lambda x: x['uni'], reverse=False)
+        self.w.selectedNames.set(items)
         self.checkSampleSize()
         
     def callbackOpenGlyphSheet(self, sender):
@@ -804,6 +823,9 @@ class Browser(object):
             
     def callbackCatNameSelect(self, sender):
         f = CurrentFont()
+        fontUniValues = list(set([g.unicode for g in f]))
+        #print 'fontUniValues', fontUniValues
+        
         glyphSelection = []
         self.currentSelection = []
         for i in sender.getSelection():
@@ -813,8 +835,18 @@ class Browser(object):
                     glyphSelection.append(glyph)
         glyphSelection.sort()
         items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in glyphSelection]
+        sortedItems = sorted(items, key=lambda x: x['uni'], reverse=False)
+
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
-        self.w.selectedNames.set(items)
+        self.w.selectedNames.set(sortedItems)
+        
+        selectedUniNumbers = ["%d"%it['uni'] for it in items if it['uni'] in fontUniValues]
+        if selectedUniNumbers:
+            query = "Unicode in {%s}"%",".join(selectedUniNumbers)    
+            #print "query", query
+            queryObj = NSPredicate.predicateWithFormat_(query)
+            CurrentFontWindow().getGlyphCollection().setQuery(queryObj)
+        
     
 if __name__ == "__main__":
     glyphDictionary = GlyphDict()
