@@ -394,6 +394,11 @@ class SimpleGlyphName(object):
                 val = anything.lower()[2:]
             else:
                 val = anything.lower()
+            while True:
+                if val[0] == "0":
+                    val = val[1:]
+                else:
+                    break
             if val in hex(self.uni):
                 return True
         for s in self.set:
