@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*-
 import os
 
+from pprint import pprint
+
 from AppKit import NSFont, NSFocusRingTypeNone, NSPredicate
 from mojo.UI import CurrentFontWindow, SmartSet
 
@@ -13,6 +15,8 @@ from unicodeRangeNames import getRangeName, getRangeAndName, getPlaneName
 import unicodedata
 import vanilla
 
+
+from mojo.roboFont import version
 
 """
     
@@ -106,7 +110,12 @@ class AddGlyphsSheet(BaseWindowController):
                 if variantName == variantNames[0]:
                     g.unicode = glyph.uni
                 if self.w.markGlyphsCheck.get():
-                    g.mark = (0, 0.95, 0.95, 1)
+                    if version[0] == '2':
+                        # RF 2.0
+                        g.markColor = (0, 0.95, 0.95, 1)
+                    else:
+                        # RF 1.8.x
+                        g.mark = (0, 0.95, 0.95, 1)
                 selection.append(variantName)
         if self.w.selectGlyphsCheck.get():
             f.selection = selection            
@@ -381,7 +390,11 @@ class SimpleGlyphName(object):
                 return True
         if self.uni is not None:
             # search hex values
-            if anything in hex(self.uni):
+            if anything.lower()[:2] == "0x":
+                val = anything.lower()[2:]
+            else:
+                val = anything.lower()
+            if val in hex(self.uni):
                 return True
         for s in self.set:
             if anything in s:
@@ -752,26 +765,26 @@ class Browser(object):
             self._names = f.keys()
 
             # show the names that are selected in the font
-            if f.selection:
-                names = []
-                for name in f.selection:
-                    g = f[name]
-                    if g.unicode:
-                        uniName = self.data.getUniMap().get(g.unicode)
-                        if uniName is not None:
-                            nameObj = self.data[uniName]
-                            if nameObj is not None:
-                                names.append(nameObj)
-                if names:
-                    self.currentSelection = names
+            # if f.selection:
+            #     names = []
+            #     for name in f.selection:
+            #         g = f[name]
+            #         if g.unicode:
+            #             uniName = self.data.getUniMap().get(g.unicode)
+            #             if uniName is not None:
+            #                 nameObj = self.data[uniName]
+            #                 if nameObj is not None:
+            #                     names.append(nameObj)
+            #     if names:
+            #         self.currentSelection = names
         else:
             self.w.addGlyphPanelButton.enable(False)
             self._unicodes = []
             self._names = []
         
-        items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in self.currentSelection]
-        items = sorted(items, key=lambda x: x['uni'], reverse=False)
-        self.w.selectedNames.set(items)
+        #items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in self.currentSelection]
+        #items = sorted(items, key=lambda x: x['uni'], reverse=False)
+        #self.w.selectedNames.set(items)
         self.checkSampleSize()
         
     def callbackOpenGlyphSheet(self, sender):
@@ -823,8 +836,11 @@ class Browser(object):
             
     def callbackCatNameSelect(self, sender):
         f = CurrentFont()
-        fontUniValues = list(set([g.unicode for g in f]))
-        #print 'fontUniValues', fontUniValues
+        items = []
+        fontUniValues = []
+        if f is not None:
+            
+            fontUniValues = list(set([g.unicode for g in f]))
         
         glyphSelection = []
         self.currentSelection = []
