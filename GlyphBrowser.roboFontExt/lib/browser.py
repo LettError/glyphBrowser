@@ -35,6 +35,8 @@ from mojo.roboFont import version
         
 """
 
+from random import choice
+glyphNameBrowserNames = [u" ✔︎ɢʟʏᴘʜʙʀᴏᴡsᴇʀ", u" ✔︎GLYPHBROWSER", 'GlyphBrowser', '']
 
 unicodeCategoryNames = {
         "Ps": "Punctuation, open",
@@ -481,15 +483,12 @@ class GlyphDict(dict):
             if record.uni in self.uniMap:
                 name = self.uniMap[record.uni]
                 glyph = self[name]
-            #for name, glyph in self.items():
-                #if glyph.uni == record.uni:
                 oldName = glyph.name
                 glyph.update(record)
                 self[record.name] = glyph
                 del self[oldName]
                 added = True
                 self.uniMap[record.uni] = record.name
-                #break
             if added:
                 return
         # option 3: just new glyph
@@ -664,7 +663,7 @@ class Browser(object):
             ]
         self.w.searchBox = vanilla.SearchBox((-200, topRow, -5, 22), "", callback=self.callbackSearch)
         self.w.selectedNames = vanilla.List((catWidth+10, topRow, -205, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
-        self.w.selectionUnicodeText = vanilla.EditText((0, 0, -0, topRow-5), placeholder=u" ✔︎ɢʟʏᴘʜʙʀᴏᴡsᴇʀ", callback=self.callbackEditUnicodeText)
+        self.w.selectionUnicodeText = vanilla.EditText((0, 0, -0, topRow-5), placeholder=choice(glyphNameBrowserNames), callback=self.callbackEditUnicodeText)
         s = self.w.selectionUnicodeText.getNSTextField()
         s.setFocusRingType_(NSFocusRingTypeNone)
 
@@ -768,28 +767,10 @@ class Browser(object):
             self.w.addGlyphPanelButton.enable(True)
             self._unicodes = list(set([g.unicode for g in f]))
             self._names = f.keys()
-
-            # show the names that are selected in the font
-            # if f.selection:
-            #     names = []
-            #     for name in f.selection:
-            #         g = f[name]
-            #         if g.unicode:
-            #             uniName = self.data.getUniMap().get(g.unicode)
-            #             if uniName is not None:
-            #                 nameObj = self.data[uniName]
-            #                 if nameObj is not None:
-            #                     names.append(nameObj)
-            #     if names:
-            #         self.currentSelection = names
         else:
             self.w.addGlyphPanelButton.enable(False)
             self._unicodes = []
             self._names = []
-        
-        #items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in self.currentSelection]
-        #items = sorted(items, key=lambda x: x['uni'], reverse=False)
-        #self.w.selectedNames.set(items)
         self.checkSampleSize()
         
     def callbackOpenGlyphSheet(self, sender):

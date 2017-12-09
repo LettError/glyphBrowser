@@ -26,9 +26,9 @@
 	<key>name</key>
 	<string>GlyphBrowser</string>
 	<key>timeStamp</key>
-	<real>1508936620.390048</real>
+	<real>1512835548.09</real>
 	<key>version</key>
-	<string>2.3</string>
+	<string>2.4</string>
 	<key>com.robofontmechanic.Mechanic</key>
 	<dict>
 		<key>repository</key>
