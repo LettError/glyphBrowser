@@ -602,12 +602,10 @@ def sortByUnicode(items, ascending=True):
         if i.uni not in sortedItems:
             sortedItems[i.uni] = []
         sortedItems[i.uni].append(i)
-    k = sortedItems.keys()
-    k.sort()
+    k = sorted(sortedItems.keys())
     sortedList = []
     for i in k:
-        sortedItems[i].sort()
-        for j in sortedItems[i]:
+        for j in sorted(sortedItems[i]):
             sortedList.append(j)
     return sortedList
 
@@ -623,8 +621,7 @@ class Browser(object):
             self.joiningTypes = {}
         else:
             self.joiningTypes = joiningTypes
-        self.catNames = self.dataByCategory.keys()
-        self.catNames.sort()
+        self.catNames = sorted(self.dataByCategory.keys())
         self.currentSelection = []
         self._typing = False
         self.unicodeVersion = unicodeVersionString
@@ -746,8 +743,7 @@ class Browser(object):
         text = text.replace("\n", " ")
         self._typing = True
         if text:
-            glyphSelection = findText(self.data, text)
-            glyphSelection.sort()
+            glyphSelection = sorted(findText(self.data, text))
             items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in glyphSelection]
             items = sorted(items, key=lambda x: x['uni'], reverse=False)
             self.w.selectedNames.set(items)
@@ -759,8 +755,7 @@ class Browser(object):
         # get the searchstring from the box and try to match as many characters as possible,
         f = CurrentFont()
         searchString = self.w.searchBox.get()
-        glyphSelection = findGlyphs(self.data, searchString)
-        glyphSelection.sort()
+        glyphSelection = sorted(findGlyphs(self.data, searchString))
         items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in glyphSelection]
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
         self.w.selectedNames.set(items)
@@ -844,8 +839,7 @@ class Browser(object):
             for glyph in self.dataByCategory[thisCat]:
                 if glyph not in glyphSelection:
                     glyphSelection.append(glyph)
-        glyphSelection.sort()
-        items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in glyphSelection]
+        items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in sorted(glyphSelection)]
         sortedItems = sorted(items, key=lambda x: x['uni'], reverse=False)
 
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
