@@ -839,7 +839,7 @@ class Browser(object):
             for glyph in self.dataByCategory[thisCat]:
                 if glyph not in glyphSelection:
                     glyphSelection.append(glyph)
-        items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in sorted(glyphSelection)]
+        items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in sorted(glyphSelection, key=lambda x:str(x))]
         sortedItems = sorted(items, key=lambda x: x['uni'], reverse=False)
 
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
