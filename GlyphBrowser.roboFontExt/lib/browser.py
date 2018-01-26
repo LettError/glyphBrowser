@@ -121,12 +121,12 @@ class AddGlyphsSheet(BaseWindowController):
                 if variantName == variantNames[0]:
                     g.unicode = glyph.uni
                 if self.w.markGlyphsCheck.get():
-                    if version[0] == '2':
-                        # RF 2.0
-                        g.markColor = (0, 0.95, 0.95, 1)
-                    else:
+                    if version < '2.0':
                         # RF 1.8.x
                         g.mark = (0, 0.95, 0.95, 1)
+                    else:
+                        # RF 2.0
+                        g.markColor = (0, 0.95, 0.95, 1)
                 selection.append(variantName)
         if self.w.selectGlyphsCheck.get():
             f.selection = selection
