@@ -1,7 +1,15 @@
 # -*- coding: UTF-8 -*-
 import os
 
+try:
+    reload
+except NameError:
+    # in py3
+    from importlib import reload
+
 from pprint import pprint
+
+from fontTools.misc.py23 import unichr
 
 from AppKit import NSFont, NSFocusRingTypeNone, NSPredicate
 from mojo.UI import CurrentFontWindow, SmartSet
@@ -10,6 +18,7 @@ import webbrowser
 import urllib
 import unicodeRangeNames
 from defconAppKit.windows.baseWindow import BaseWindowController
+
 reload(unicodeRangeNames)
 from unicodeRangeNames import getRangeName, getRangeAndName, getPlaneName
 import unicodedata
