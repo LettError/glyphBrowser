@@ -736,7 +736,7 @@ class Browser(object):
             if len(self.currentSelection)!=1: return
             for glyph in self.currentSelection:
                 lookupThese.append(glyph)
-        url = self.lookupURL + urllib.urlencode(dict(s=",".join([a.asU() for a in lookupThese])))
+        url = self.lookupURL + urlencode(dict(s=",".join([a.asU() for a in lookupThese])))
         webbrowser.get().open(url)
 
     def callbackEditUnicodeText(self, sender):
