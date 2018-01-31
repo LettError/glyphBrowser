@@ -2,10 +2,11 @@
 import os
 
 try:
-    reload
-except NameError:
     # in py3
     from importlib import reload
+except NameError:
+    reload
+
 
 from pprint import pprint
 
@@ -15,7 +16,13 @@ from AppKit import NSFont, NSFocusRingTypeNone, NSPredicate
 from mojo.UI import CurrentFontWindow, SmartSet
 
 import webbrowser
-import urllib
+
+try:
+    # in py3
+    from urllib.parse import urlencode
+except ImportError:
+    from urllib import urlencode
+
 import unicodeRangeNames
 from defconAppKit.windows.baseWindow import BaseWindowController
 
