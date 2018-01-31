@@ -762,7 +762,7 @@ class Browser(object):
         # get the searchstring from the box and try to match as many characters as possible,
         f = CurrentFont()
         searchString = self.w.searchBox.get()
-        glyphSelection = sorted(findGlyphs(self.data, searchString))
+        glyphSelection = sorted(findGlyphs(self.data, searchString), key=lambda x:str(x))
         items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in glyphSelection]
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
         self.w.selectedNames.set(items)
