@@ -2,10 +2,11 @@
 import os
 
 try:
-    reload
-except NameError:
     # in py3
     from importlib import reload
+except NameError:
+    reload
+
 
 from pprint import pprint
 
@@ -15,7 +16,13 @@ from AppKit import NSFont, NSFocusRingTypeNone, NSPredicate
 from mojo.UI import CurrentFontWindow, SmartSet
 
 import webbrowser
-import urllib
+
+try:
+    # in py3
+    from urllib.parse import urlencode
+except ImportError:
+    from urllib import urlencode
+
 import unicodeRangeNames
 from defconAppKit.windows.baseWindow import BaseWindowController
 
@@ -729,7 +736,7 @@ class Browser(object):
             if len(self.currentSelection)!=1: return
             for glyph in self.currentSelection:
                 lookupThese.append(glyph)
-        url = self.lookupURL + urllib.urlencode(dict(s=",".join([a.asU() for a in lookupThese])))
+        url = self.lookupURL + urlencode(dict(s=",".join([a.asU() for a in lookupThese])))
         webbrowser.get().open(url)
 
     def callbackEditUnicodeText(self, sender):
@@ -755,7 +762,7 @@ class Browser(object):
         # get the searchstring from the box and try to match as many characters as possible,
         f = CurrentFont()
         searchString = self.w.searchBox.get()
-        glyphSelection = sorted(findGlyphs(self.data, searchString))
+        glyphSelection = sorted(findGlyphs(self.data, searchString), key=lambda x:str(x))
         items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in glyphSelection]
         items = sorted(items, key=lambda x: x['uni'], reverse=False)
         self.w.selectedNames.set(items)
