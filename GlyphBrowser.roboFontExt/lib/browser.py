@@ -1,12 +1,10 @@
 # -*- coding: UTF-8 -*-
 import os
 
-try:
-    # in py3
+# RF3
+from mojo.roboFont import version
+if version >= "3.0.0":
     from importlib import reload
-except NameError:
-    reload
-
 
 from pprint import pprint
 
