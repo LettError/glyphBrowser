@@ -2,12 +2,12 @@
 import os
 
 import unicodeRangeNames
-try:
-    # in py3
+
+from mojo.roboFont import version
+if version >= "3.0.0":
     from importlib import reload
-    reload(unicodeRangeNames)
-except ImportError:
-    reload(unicodeRangeNames)
+reload(unicodeRangeNames)
+    
 
 
 from pprint import pprint
