@@ -1,11 +1,13 @@
 # -*- coding: UTF-8 -*-
 import os
 
+import unicodeRangeNames
 try:
     # in py3
     from importlib import reload
-except NameError:
-    reload
+    reload(unicodeRangeNames)
+except ImportError:
+    reload(unicodeRangeNames)
 
 
 from pprint import pprint
@@ -26,7 +28,6 @@ except ImportError:
 import unicodeRangeNames
 from defconAppKit.windows.baseWindow import BaseWindowController
 
-reload(unicodeRangeNames)
 from unicodeRangeNames import getRangeName, getRangeAndName, getPlaneName
 import unicodedata
 import vanilla
@@ -52,7 +53,7 @@ from mojo.roboFont import version
 """
 
 from random import choice
-glyphNameBrowserNames = [u" ✔︎ɢʟʏᴘʜʙʀᴏᴡsᴇʀ", u" ✔︎GLYPHBROWSER", 'GlyphBrowser', '']
+glyphNameBrowserNames = [u" ✔︎ɢʟʏᴘʜʙʀᴏᴡsᴇʀ", u" ✔︎GLYPHBROWSER", u'✔GlyphBrowser', u'𝕲𝕷𝖄𝕻𝕳𝕭𝕽𝕺𝖂𝕾𝕰𝕽']
 
 unicodeCategoryNames = {
         "Ps": "Punctuation, open",
