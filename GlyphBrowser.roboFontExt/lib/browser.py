@@ -4,10 +4,10 @@ import os
 import unicodeRangeNames
 
 from mojo.roboFont import version
-if version >= "3.0.0":
+if version >= "3.0":
     from importlib import reload
 reload(unicodeRangeNames)
-    
+
 
 
 from pprint import pprint
