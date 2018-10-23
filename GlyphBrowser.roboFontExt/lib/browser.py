@@ -16,6 +16,7 @@ from fontTools.misc.py23 import unichr
 
 from AppKit import NSFont, NSFocusRingTypeNone, NSPredicate
 from mojo.UI import CurrentFontWindow, SmartSet
+from mojo.events import publishEvent
 
 import webbrowser
 
@@ -53,7 +54,12 @@ from mojo.roboFont import version
 """
 
 from random import choice
-glyphNameBrowserNames = [u" ✔︎ɢʟʏᴘʜʙʀᴏᴡsᴇʀ", u" ✔︎GLYPHBROWSER", u'✔GlyphBrowser', u'𝕲𝕷𝖄𝕻𝕳𝕭𝕽𝕺𝖂𝕾𝕰𝕽']
+glyphNameBrowserNames = [
+    '\u2714\ufe0e\u0262\u029f\u028f\u1d18\u029c\u0299\u0280\u1d0f\u1d21s\u1d07\u0280',
+    '\u2714\ufe0eGLYPHBROWSER',
+    '\u2714GlyphBrowser',
+    '\U0001d572\U0001d577\U0001d584\U0001d57b\U0001d573\U0001d56d\U0001d57d\U0001d57a\U0001d582\U0001d57e\U0001d570\U0001d57d',
+]
 
 unicodeCategoryNames = {
         "Ps": "Punctuation, open",
@@ -120,6 +126,7 @@ class AddGlyphsSheet(BaseWindowController):
         self.w.markGlyphsCheck, self.w.selectGlyphsCheck
         f = CurrentFont()
         selection = []
+        newGlyphs = {}
         for glyph in self.theseGlyphs:
             variantNames = glyph.getAllNames()
             for variantName in variantNames:
@@ -128,6 +135,7 @@ class AddGlyphsSheet(BaseWindowController):
                 g = f[variantName]
                 if variantName == variantNames[0]:
                     g.unicode = glyph.uni
+                newGlyphs[g.name] = g.unicode
                 if self.w.markGlyphsCheck.get():
                     if version < '2.0':
                         # RF 1.8.x
@@ -140,6 +148,8 @@ class AddGlyphsSheet(BaseWindowController):
             f.selection = selection
         if self.applyCallback:
             self.applyCallback(None)
+        if selection:
+            publishEvent("glyphbrowser.newGlyphs", newGlyphs=newGlyphs, font=f)
         self.close()
 
     def _breakCycles(self):
