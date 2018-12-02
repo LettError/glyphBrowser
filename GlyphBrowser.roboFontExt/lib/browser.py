@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 import os
-
+import AppKit
 import unicodeRangeNames
 
 from mojo.roboFont import version
@@ -92,6 +92,42 @@ unicodeCategoryNames = {
     }
 
 
+import time
+from fontTools.ttLib import TTFont, TTLibError
+
+genericListPboardType = "genericListPboardType"
+
+def extractUnicodesFromOpenType(pathOrFile):
+    source = TTFont(pathOrFile)
+    cmap = source["cmap"]
+    preferred = [
+        (3, 10, 12),
+        (3, 10, 4),
+        (3, 1, 12),
+        (3, 1, 4),
+        (0, 3, 12),
+        (0, 3, 4),
+        (3, 0, 12),
+        (3, 0, 4),
+        (1, 0, 12),
+        (1, 0, 4)
+    ]
+    found = {}
+    for table in cmap.tables:
+        found[table.platformID, table.platEncID, table.format] = table
+        table = None
+    for key in preferred:
+        if key not in found:
+            continue
+        table = found[key]
+        break
+    reversedMapping = {}
+    if table is not None:
+        for uniValue, glyphName in table.cmap.items():
+            reversedMapping[glyphName] = uniValue
+    return reversedMapping
+    
+#extractUnicodesFromOpenType(path)
 
 def unicodeToChar(uni):
     import struct
@@ -245,6 +281,16 @@ class SimpleGlyphName(object):
         self.unicodeString = ""
         self.unicodeName = None
 
+    def __cmp__(self, other):
+        if self.uni is None or other.uni is None:
+            return 0
+        if self.uni > other.uni:
+            return 1
+        elif self.uni< other.uni:
+            return -1
+        else:
+            return 0
+
     def getAllNames(self):
         # based on the category data, give suggestion for which extensions we need for any unicode
         extensions = {
@@ -294,11 +340,11 @@ class SimpleGlyphName(object):
         else:
             d['joiningType'] = ""
         if self.uni in fontUnicodes:
-            d['unicodeinfont'] = u"•"    # 🔢
+            d['unicodeinfont'] = "*"    # 🔢
         else:
             d['unicodeinfont'] = ""
         if self.name in fontNames:
-            d['nameinfont'] = u"•"    # 🔤
+            d['nameinfont'] = "•"    #
         else:
             d['nameinfont'] = ""
         d['string'] = self.unicodeString
@@ -578,9 +624,12 @@ def findText(data, text):
     # find the names for this text
     results = []
     need = [ord(c) for c in text]
+    print("need ", need )
     for name, glyph in data.items():
         if glyph.uni in need:
             results.append(glyph)
+    print('results', results)
+    print("sortByUnicode(results)", sortByUnicode(results))
     return sortByUnicode(results)
 
 def findCategory(data, category):
@@ -632,6 +681,8 @@ class Browser(object):
     # this looks like a reasonable unicode reference database.
     # but it could by any other.
     lookupURL = u"http://unicode.scarfboy.com/?"
+    acceptedExtensionsForDrop = ['.otf', '.OTF', '.ttf', '.TTF']
+
     def __init__(self, data, unicodeVersionString, versionString, joiningTypes=None):
         self.data = data
         self.dataByCategory = collectSearchCategories(data)
@@ -661,7 +712,9 @@ class Browser(object):
             {    'title': "Categories, ranges, namelists",
                     'key': 'name'},
         ]
-        self.w.catNames = vanilla.List((5, topRow, catWidth, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackCatNameSelect)
+        self.w.catNames = vanilla.List((5, topRow, catWidth, -5), [],
+            columnDescriptions=columnDescriptions,
+            selectionCallback=self.callbackCatNameSelect)
         charWidth = 18
         columnDescriptions = [
             {    'title': u"❡",
@@ -690,7 +743,20 @@ class Browser(object):
                      },
             ]
         self.w.searchBox = vanilla.SearchBox((-200, topRow, -5, 22), "", callback=self.callbackSearch)
-        self.w.selectedNames = vanilla.List((catWidth+10, topRow, -205, -5), [], columnDescriptions=columnDescriptions, selectionCallback=self.callbackGlyphNameSelect)
+
+        dropSettings = {
+            'type': AppKit.NSFilenamesPboardType,
+            'callback': self.callbackDropOnLocationList,
+            'allowDropBetweenRows': False
+        }
+        self.w.selectedNames = vanilla.List(
+            (catWidth+10, topRow, -205, -5),
+            [],
+            columnDescriptions=columnDescriptions,
+            selectionCallback=self.callbackGlyphNameSelect,
+
+            otherApplicationDropSettings=dropSettings,
+        )
         self.w.selectionUnicodeText = vanilla.EditText((0, 0, -0, topRow-5), placeholder=choice(glyphNameBrowserNames), callback=self.callbackEditUnicodeText)
         s = self.w.selectionUnicodeText.getNSTextField()
         s.setFocusRingType_(NSFocusRingTypeNone)
@@ -707,6 +773,40 @@ class Browser(object):
         self.w.open()
         self.w.catNames.setSelection([0])
 
+    def callbackDropOnLocationList(self, sender, dropInfo):
+        #   handle files droppings on the list
+        #       this is how the drop info comes in
+        #        {   'rowIndex': 6,
+        #            'source': None,
+        #            'data': (
+        #                "/Users/erik/Develop/Tal/LiveInterpol.py",
+        #                "/Users/erik/Develop/Tal/magic sort 1.py"
+        #                ),
+        #            'dropOnRow': False,
+        #            'isProposal': False
+        #        }
+        
+        # are we offered ,ufo files?
+        acceptedPaths = []
+        for path in dropInfo['data']:
+            if os.path.splitext(path)[-1] in self.acceptedExtensionsForDrop:
+                acceptedPaths.append(path)
+        if acceptedPaths:
+            if dropInfo['isProposal']:
+                # self.logger.info("callbackDropOnLocationList proposal %s", path)
+                # this is a proposal, we like the offer
+                return True
+            else:
+                if len(acceptedPaths) ==1:
+                    names = extractUnicodesFromOpenType(acceptedPaths[0])
+                    self.callbackSetUnicodesFromBinary(names.values())
+                    print(names)
+                    return True
+                return False
+        else:
+            # nothing to accept
+            return False
+    
     def checkSampleSize(self):
         text = self.w.selectionUnicodeText.get()
         minFontSize = 20
@@ -754,6 +854,20 @@ class Browser(object):
         url = self.lookupURL + urlencode(dict(s=",".join([a.asU() for a in lookupThese])))
         webbrowser.get().open(url)
 
+    def callbackSetUnicodesFromBinary(self, values):
+        self._typing = True
+        if len(values) > 0:
+            text = "".join([chr(v) for v in values])
+            glyphSelection = findText(self.data, text)
+            items = []
+            for g in glyphSelection:
+                items.append(g.asDict(self._unicodes, self._names, self.joiningTypes))
+            items = sorted(items, key=lambda x: x['uni'], reverse=False)
+            self.w.selectedNames.set(items)
+        self.w.selectionUnicodeText.set(text)
+        self._typing = False
+        self.checkSampleSize()
+
     def callbackEditUnicodeText(self, sender):
         # this is the callback for the unicode textbox.
         # if text is edited here, find the glyphs that are used in the text
@@ -764,9 +878,11 @@ class Browser(object):
         text = text.replace("\r", " ")
         text = text.replace("\n", " ")
         self._typing = True
-        if text:
-            glyphSelection = sorted(findText(self.data, text))
-            items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in glyphSelection]
+        if len(text) > 0:
+            glyphSelection = findText(self.data, text)
+            items = []
+            for g in glyphSelection:
+                items.append(g.asDict(self._unicodes, self._names, self.joiningTypes))
             items = sorted(items, key=lambda x: x['uni'], reverse=False)
             self.w.selectedNames.set(items)
         self.w.selectionUnicodeText.set(text)
