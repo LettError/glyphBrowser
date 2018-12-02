@@ -17,9 +17,18 @@ browserRoot = os.path.join(os.getcwd(), "GlyphBrowser.roboFontExt", "lib")
 srcNamePath = os.path.join(gnfRoot, "names", "glyphNamesToUnicodeAndCategories_experimental.txt")
 if os.path.exists(srcNamePath):
     dstNamePth = os.path.join(browserRoot, "data", "glyphNamesToUnicode.txt")
-    print "srcNamePath", srcNamePath
-    print "dstNamePth", dstNamePth
+    print("srcNamePath", srcNamePath)
+    print("dstNamePth", dstNamePth)
     shutil.copyfile(srcNamePath, dstNamePth)
+
+# copy the joining types
+srcJoiningTypesPath = os.path.join(gnfRoot, "data", "joiningTypes.txt")
+if os.path.exists(srcJoiningTypesPath):
+    dstJoiningTypesPath = os.path.join(browserRoot, "data", "joiningTypes.txt")
+    print("srcJoiningTypesPath", srcJoiningTypesPath)
+    print("dstJoiningTypesPath", dstJoiningTypesPath)
+shutil.copyfile(srcJoiningTypesPath, dstJoiningTypesPath)
+
 
 # make a range name table
 from glyphNameFormatter.unicodeRangeNames import getAllRangeNames, getRangeByName
@@ -41,7 +50,7 @@ pyText.append(u"# Generated on %s" % time.strftime("%Y %m %d %H:%M:%S"))
 pyText.append(u"unicodeRangeNames =" + pprint.pformat(ranges, indent=4))
 
 pyPath = os.path.join(browserRoot, "unicodeRanges.py")
-print "pyPath", pyPath
+print("pyPath", pyPath)
 f = open(pyPath, 'w')
 f.write("\n".join(pyText))
 f.close()
