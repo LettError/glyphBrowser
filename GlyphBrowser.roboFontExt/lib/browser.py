@@ -646,7 +646,11 @@ class Browser(object):
         topRow = 80
         catWidth = 320
 
-        self.w = vanilla.Window((1200, 500), ("GlyphNameBrowser with %s and %s"%(self.unicodeVersion, versionString)), minSize=(800, 500))
+        self.w = vanilla.Window((1200, 500), 
+            ("GlyphNameBrowser with %s and %s"%(self.unicodeVersion, versionString)), 
+            minSize=(800, 500),
+            autosaveName = "com.letterror.glyphBrowser.mainWindow",
+            )
         columnDescriptions = [
             {    'title': u"",
                  'key': 'col1',
@@ -874,6 +878,7 @@ class Browser(object):
 if __name__ == "__main__":
     glyphDictionary = GlyphDict()
     joiningTypes = readJoiningTypes("./data/joiningTypes.txt")
+    print("joiningTypes", joiningTypes)
     UnicodeVersion, GNFULversion, glyphDictionary = readUniNames("./data/glyphNamesToUnicode.txt", glyphDictionary, joiningTypes)
 
     browser = Browser(glyphDictionary, UnicodeVersion, GNFULversion, joiningTypes)
