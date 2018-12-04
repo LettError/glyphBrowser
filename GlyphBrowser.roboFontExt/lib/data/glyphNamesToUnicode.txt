@@ -1,8 +1,8 @@
 # Glyph Name Formatted Unicode List - GNFUL
-# GlyphNameFormatter version 0.28 - git commit: 413
+# GlyphNameFormatter version 0.29 - git commit: 421
 # Unicode version: Unicode 11.0.0
-# Source code: https://github.com/LettError/glyphNameFormatter/tree/3bf00dc
-# Generated on 2018 12 02 22:30:36
+# Source code: https://github.com/LettError/glyphNameFormatter/tree/5bfeafb
+# Generated on 2018 12 03 22:09:38
 # <glyphName> <hex unicode> <unicodeCategory>
 #
 # Basic Latin
@@ -6949,6 +6949,101 @@ dots345678 28FC So
 dots1345678 28FD So
 dots2345678 28FE So
 dots12345678 28FF So
+# Glagolitic
+Azu 2C00 Lu
+Buky 2C01 Lu
+Vede 2C02 Lu
+Glagoli 2C03 Lu
+Dobro 2C04 Lu
+Yestu 2C05 Lu
+Zhivete 2C06 Lu
+Dzelo 2C07 Lu
+Zemlja 2C08 Lu
+Izhe 2C09 Lu
+Initializhe 2C0A Lu
+glag:I 2C0B Lu
+Djervi 2C0C Lu
+Kako 2C0D Lu
+Ljudije 2C0E Lu
+Myslite 2C0F Lu
+Nashi 2C10 Lu
+Onu 2C11 Lu
+Pokoji 2C12 Lu
+Ritsi 2C13 Lu
+Slovo 2C14 Lu
+Tvrido 2C15 Lu
+Uku 2C16 Lu
+Fritu 2C17 Lu
+Heru 2C18 Lu
+Otu 2C19 Lu
+glag:Pe 2C1A Lu
+Shta 2C1B Lu
+Tsi 2C1C Lu
+Chrivi 2C1D Lu
+glag:Sha 2C1E Lu
+Yeru 2C1F Lu
+Yeri 2C20 Lu
+Yati 2C21 Lu
+Spideryha 2C22 Lu
+glag:Yu 2C23 Lu
+Smallyus 2C24 Lu
+Smallyuswithtail 2C25 Lu
+Yo 2C26 Lu
+Iotatedsmallyus 2C27 Lu
+Bigyus 2C28 Lu
+Iotatedbigyus 2C29 Lu
+glag:Fita 2C2A Lu
+glag:Izhitsa 2C2B Lu
+Shtapic 2C2C Lu
+Trokutastia 2C2D Lu
+Latinatemyslite 2C2E Lu
+azu 2C30 Ll
+buky 2C31 Ll
+vede 2C32 Ll
+glagoli 2C33 Ll
+dobro 2C34 Ll
+yestu 2C35 Ll
+zhivete 2C36 Ll
+dzelo 2C37 Ll
+zemlja 2C38 Ll
+izhe 2C39 Ll
+initializhe 2C3A Ll
+glag:i 2C3B Ll
+djervi 2C3C Ll
+kako 2C3D Ll
+ljudije 2C3E Ll
+myslite 2C3F Ll
+nashi 2C40 Ll
+onu 2C41 Ll
+pokoji 2C42 Ll
+ritsi 2C43 Ll
+slovo 2C44 Ll
+tvrido 2C45 Ll
+uku 2C46 Ll
+fritu 2C47 Ll
+heru 2C48 Ll
+otu 2C49 Ll
+glag:pe 2C4A Ll
+shta 2C4B Ll
+glag:tsi 2C4C Ll
+chrivi 2C4D Ll
+glag:sha 2C4E Ll
+yeru 2C4F Ll
+yeri 2C50 Ll
+yati 2C51 Ll
+spideryha 2C52 Ll
+glag:yu 2C53 Ll
+smallyus 2C54 Ll
+smallyuswithtail 2C55 Ll
+glag:yo 2C56 Ll
+iotatedsmallyus 2C57 Ll
+bigyus 2C58 Ll
+iotatedbigyus 2C59 Ll
+glag:fita 2C5A Ll
+glag:izhitsa 2C5B Ll
+shtapic 2C5C Ll
+trokutastia 2C5D Ll
+latinatemyslite 2C5E Ll
 # Latin Extended-C
 Ldblbar 2C60 Lu
 ldblbar 2C61 Ll

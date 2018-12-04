@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 # Generated from glyphNameFormatter range names
-# Generated on 2018 12 02 23:10:03
+# Generated on 2018 12 04 19:16:54
 unicodeRangeNames ={   (0, 127): 'Basic Latin',
     (128, 255): 'Latin-1 Supplement',
     (256, 383): 'Latin Extended-A',

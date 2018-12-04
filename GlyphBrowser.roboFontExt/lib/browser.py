@@ -97,6 +97,15 @@ from fontTools.ttLib import TTFont, TTLibError
 
 genericListPboardType = "genericListPboardType"
 
+def extractUnicodesFromUFO(path):
+    f = RFont(path, showInterface=False)
+    values = []
+    for g in f:
+        for u in g.unicodes:
+            values.append(u)
+    f.close()
+    return values
+    
 def extractUnicodesFromOpenType(pathOrFile):
     source = TTFont(pathOrFile)
     cmap = source["cmap"]
@@ -127,8 +136,6 @@ def extractUnicodesFromOpenType(pathOrFile):
             reversedMapping[glyphName] = uniValue
     return reversedMapping
     
-#extractUnicodesFromOpenType(path)
-
 def unicodeToChar(uni):
     import struct
     if uni < 0xFFFF:
@@ -340,11 +347,11 @@ class SimpleGlyphName(object):
         else:
             d['joiningType'] = ""
         if self.uni in fontUnicodes:
-            d['unicodeinfont'] = "*"    # 🔢
+            d['unicodeinfont'] = "*"
         else:
             d['unicodeinfont'] = ""
         if self.name in fontNames:
-            d['nameinfont'] = "•"    #
+            d['nameinfont'] = "•"
         else:
             d['nameinfont'] = ""
         d['string'] = self.unicodeString
@@ -365,9 +372,6 @@ class SimpleGlyphName(object):
             d['uniName'] = self.unicodeName
         else:
             d['uniName'] = ""
-        #if self.sub is not None:
-        #    if len(self.sub)>0:
-        #        d["parts"] += self.sub[0]
         return d
 
     def __repr__(self):
@@ -411,24 +415,22 @@ class SimpleGlyphName(object):
         # return a list of all names, tags, strings that could serve as selection criteria
         allCats = []
         if self.srcPath:
-            allCats.append(u"📦\t%s"%self.srcPath)
+            allCats.append("📦\t%s"%self.srcPath)
         if self.error:
-            allCats.append(u"⚠️\tError")
+            allCats.append("⚠️\tError")
         if self.uni is None:
-            allCats.append(u"⋯\tNo unicode")
+            allCats.append("⋯\tNo unicode")
         if self.unicodeRangeName is not None:
             a, b = self.unicodeRange
-            allCats.append(u"%05X\t%05X\t%s"%(a, b, self.unicodeRangeName))
+            allCats.append("%05X\t%05X\t%s"%(a, b, self.unicodeRangeName))
         if self.unicodeCategoryName is not None:
-            allCats.append(u"📕\t"+ self.unicodeCategoryName)
+            allCats.append("📕\t"+ self.unicodeCategoryName)
         if self.uni is not None:
-            allCats.append(u"🔣\t"+ getPlaneName(self.uni))
+            allCats.append("🔣\t"+ getPlaneName(self.uni))
         for s in self.set:
-            allCats.append(u"☰\t"+s)
+            allCats.append("☰\t"+s)
         if "_" in self.name:
-            allCats.append(u"f_f_l\tCombined glyphs")
-        #if ":" in self.name:
-        #    allCats.append(u"📎\t%s"%self.name.split(":")[0])
+            allCats.append("f_f_l\tCombined glyphs")
         if u"." in self.name and self.name[0]!=u".":
             # catch glyph names with extensions, but not .notdef
             extension = self.name.split(".")[-1]
@@ -624,12 +626,12 @@ def findText(data, text):
     # find the names for this text
     results = []
     need = [ord(c) for c in text]
-    print("need ", need )
+    #print("need ", need )
     for name, glyph in data.items():
         if glyph.uni in need:
             results.append(glyph)
-    print('results', results)
-    print("sortByUnicode(results)", sortByUnicode(results))
+    #print('results', results)
+    #print("sortByUnicode(results)", sortByUnicode(results))
     return sortByUnicode(results)
 
 def findCategory(data, category):
@@ -680,8 +682,8 @@ class Browser(object):
 
     # this looks like a reasonable unicode reference database.
     # but it could by any other.
-    lookupURL = u"http://unicode.scarfboy.com/?"
-    acceptedExtensionsForDrop = ['.otf', '.OTF', '.ttf', '.TTF']
+    lookupURL = "http://unicode.scarfboy.com/?"
+    acceptedExtensionsForDrop = ['.otf', '.ttf', '.ufo']
 
     def __init__(self, data, unicodeVersionString, versionString, joiningTypes=None):
         self.data = data
@@ -787,22 +789,32 @@ class Browser(object):
         #        }
         
         # are we offered ,ufo files?
-        acceptedPaths = []
+        acceptedPaths = {}
+        values = []
         for path in dropInfo['data']:
-            if os.path.splitext(path)[-1] in self.acceptedExtensionsForDrop:
-                acceptedPaths.append(path)
+            ext = os.path.splitext(path)[-1].lower()
+            if ext in self.acceptedExtensionsForDrop:
+                if not ext in acceptedPaths:
+                    acceptedPaths[ext] = []
+                acceptedPaths[ext].append(path)
         if acceptedPaths:
             if dropInfo['isProposal']:
                 # self.logger.info("callbackDropOnLocationList proposal %s", path)
                 # this is a proposal, we like the offer
                 return True
             else:
-                if len(acceptedPaths) ==1:
-                    names = extractUnicodesFromOpenType(acceptedPaths[0])
-                    self.callbackSetUnicodesFromBinary(names.values())
-                    print(names)
-                    return True
-                return False
+                for ext, paths in acceptedPaths.items():
+                    if ext in [".otf", '.ttf']:
+                        for p in paths:
+                            values += extractUnicodesFromOpenType(p).values()
+                    elif ext in ['.ufo']:
+                        for p in paths:
+                            values += extractUnicodesFromUFO(p)
+                values = list(set(values))
+                values = sorted(values)
+                self.callbackSetUnicodesFromBinary(values)
+                return True
+            return False
         else:
             # nothing to accept
             return False
@@ -856,14 +868,14 @@ class Browser(object):
 
     def callbackSetUnicodesFromBinary(self, values):
         self._typing = True
+        items = []
         if len(values) > 0:
             text = "".join([chr(v) for v in values])
             glyphSelection = findText(self.data, text)
-            items = []
             for g in glyphSelection:
                 items.append(g.asDict(self._unicodes, self._names, self.joiningTypes))
             items = sorted(items, key=lambda x: x['uni'], reverse=False)
-            self.w.selectedNames.set(items)
+        self.w.selectedNames.set(items)
         self.w.selectionUnicodeText.set(text)
         self._typing = False
         self.checkSampleSize()
@@ -986,7 +998,6 @@ class Browser(object):
         selectedUniNumbers = ["%d"%it['uni'] for it in items if it['uni'] in fontUniValues]
         if selectedUniNumbers:
             query = "Unicode in {%s}"%",".join(selectedUniNumbers)
-            #print("query", query)
             queryObj = NSPredicate.predicateWithFormat_(query)
             CurrentFontWindow().getGlyphCollection().setQuery(queryObj)
 
@@ -994,7 +1005,6 @@ class Browser(object):
 if __name__ == "__main__":
     glyphDictionary = GlyphDict()
     joiningTypes = readJoiningTypes("./data/joiningTypes.txt")
-    print("joiningTypes", joiningTypes)
     UnicodeVersion, GNFULversion, glyphDictionary = readUniNames("./data/glyphNamesToUnicode.txt", glyphDictionary, joiningTypes)
 
     browser = Browser(glyphDictionary, UnicodeVersion, GNFULversion, joiningTypes)
