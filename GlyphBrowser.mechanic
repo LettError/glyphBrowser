@@ -1,0 +1,8 @@
+extensionName: GlyphBrowser
+repository: https://github.com/LettError/glyphBrowser
+extensionPath: GlyphBrowser.roboFontExt
+description: A RoboFont extension for browsing and selecting unicode values, glyphnames, categories, lists.
+tags: [ unicode glyphnames scripts languages ]
+developer: Erik van Blokland
+developerURL: http://letterror.com
+icon: GlyphBrowserMechanicIcon.png
