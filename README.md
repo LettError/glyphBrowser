@@ -1,4 +1,6 @@
-# Glyph(Name)Browser
+# GlyphBrowser for RoboFont
+
+![GlyphBrowser icon](GlyphBrowserMechanicIcon.png)
 
 “Helping Unicode characters to become RoboFont glyphs”
 
