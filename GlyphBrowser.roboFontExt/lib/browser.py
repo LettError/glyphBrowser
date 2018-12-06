@@ -9,7 +9,7 @@ if version >= "3.0":
 reload(unicodeRangeNames)
 
 
-
+from glyphNameFormatter.reader import *
 from pprint import pprint
 
 from fontTools.misc.py23 import unichr
@@ -91,12 +91,70 @@ unicodeCategoryNames = {
         "Zs": "Separator, space",
     }
 
+# some fontlab names from .enc files that these lists have no value for
+# but we know what they are, so let's assign these values.
+fontLabNames = {
+	"CR" : 0x0D	,
+	"DC1": 0x11	,
+	"DC2": 0x12	,
+	"DC3": 0x13	,
+	"DC4": 0x14	,
+	"DEL": 0x7F	,
+	"DLE": 0x10	,
+	"HT" : 0x09	,
+	"LF" : 0x10	,
+	"NUL": 0x1E	,
+	"RS" : 0x1E	,
+	"US" : 0x1F	,
+	"apple": 0xF8FF	,
+	"Apple": 0xF8FF	,
+	"florin": 0x0192	,
+	"guillemotleft": 0x00AB	,
+	"guillemotright": 0x00BB	,
+	"uni00A0": 0x00A0	,
+	'uni03C2': 0x03C2,
+
+}
 
 import time
 from fontTools.ttLib import TTFont, TTLibError
 
 genericListPboardType = "genericListPboardType"
 
+def extractUnicodesFromEncodingFile(path):
+    # read glyphnames from encoding file
+    # match them with a unicode from our list
+    print("extractUnicodesFromEncodingFile", path)
+    values = []
+    f = open(path, 'r')
+    data = f.read()
+    f.close()
+    l = []
+    for line in data.split("\n"):
+        if len(line) == 0:
+            continue
+        if line[0] == "%":
+            continue
+        if "%" in line:
+            line = line.split('%')[0]
+            line = line.strip()
+        if " " in line:
+            # it contains an index
+            line = line.split(" ")[0]
+            line = line.strip()
+        if "\t" in line:
+            # it contains an index
+            line = line.split("\t")[0]
+            line = line.strip()
+        uni = n2u(line)
+        if uni is not None:
+            values.append(uni)
+        elif line in fontLabNames:
+            values.append(fontLabNames.get(line))
+        else:
+            print("GlyphBrowser: ENC importer: can't find a value for %s" % line)
+    return values
+    
 def extractUnicodesFromUFO(path):
     f = RFont(path, showInterface=False)
     values = []
@@ -463,7 +521,7 @@ class SimpleGlyphName(object):
             if anything.lower() in self.unicodeName.lower():
                 return True
         if self.unicodeString is not None:
-            if anything == self.unicodeString:
+            if anything.lower() in self.unicodeString.lower():
                 return True
         if self.uni is not None:
             # search hex values
@@ -683,7 +741,7 @@ class Browser(object):
     # this looks like a reasonable unicode reference database.
     # but it could by any other.
     lookupURL = "http://unicode.scarfboy.com/?"
-    acceptedExtensionsForDrop = ['.otf', '.ttf', '.ufo']
+    acceptedExtensionsForDrop = ['.otf', '.ttf', '.ufo', ".enc", ".ENC"]
 
     def __init__(self, data, unicodeVersionString, versionString, joiningTypes=None):
         self.data = data
@@ -807,6 +865,9 @@ class Browser(object):
                     if ext in [".otf", '.ttf']:
                         for p in paths:
                             values += extractUnicodesFromOpenType(p).values()
+                    elif ext in ['.enc']:
+                        for p in paths:
+                            values += extractUnicodesFromEncodingFile(p)
                     elif ext in ['.ufo']:
                         for p in paths:
                             values += extractUnicodesFromUFO(p)
