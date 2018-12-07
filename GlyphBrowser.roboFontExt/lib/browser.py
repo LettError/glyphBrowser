@@ -2,6 +2,7 @@
 import os
 import AppKit
 import unicodeRangeNames
+import traceback
 
 import mojo
 from mojo.roboFont import version
@@ -281,8 +282,10 @@ class AddGlyphsSheet(BaseWindowController):
             parentWindow,
             cancelCallback,
             applyCallback,
+            targetFont = None
             ):
         self.theseGlyphs = theseGlyphs    # list of these unicode glyph objects
+        self.targetFont = targetFont
         self.cancelCallback = cancelCallback
         self.applyCallback = applyCallback
         self.buildBaseWindow(parentWindow)
@@ -293,36 +296,38 @@ class AddGlyphsSheet(BaseWindowController):
             self.cancelCallback(None)
         self.close()
 
-    def callbackApplyButton(self, sender):
+    def callbackApplyAddGlyphsToTargetFont(self, sender=None):
         # see if the current data is any different from the original data
 
         self.w.markGlyphsCheck, self.w.selectGlyphsCheck
-        f = CurrentFont()
         selection = []
         newGlyphs = {}
         for glyph in self.theseGlyphs:
             variantNames = glyph.getAllNames()
             for variantName in variantNames:
-                if not variantName in f:
-                    f.newGlyph(variantName)
-                g = f[variantName]
+                if variantName in self.targetFont:
+                    continue
+                if not variantName in self.targetFont:
+                    self.targetFont.newGlyph(variantName)
+                g = self.targetFont[variantName]
+                g.width = 500    # default Width
                 if variantName == variantNames[0]:
                     g.unicode = glyph.uni
                 newGlyphs[g.name] = g.unicode
                 if self.w.markGlyphsCheck.get():
                     if version < '2.0':
                         # RF 1.8.x
-                        g.mark = (0, 0.95, 0.95, 1)
+                        g.mark = (0, 0.95, 0.95, .25)
                     else:
                         # RF 2.0
-                        g.markColor = (0, 0.95, 0.95, 1)
+                        g.markColor = (0, 0.95, 0.95, .25)
                 selection.append(variantName)
         if self.w.selectGlyphsCheck.get():
-            f.selection = selection
+            self.targetFont.selection = selection
         if self.applyCallback:
             self.applyCallback(None)
         if selection:
-            publishEvent("glyphbrowser.newGlyphs", newGlyphs=newGlyphs, font=f)
+            publishEvent("glyphbrowser.newGlyphs", newGlyphs=newGlyphs, font=self.targetFont)
         self.close()
 
     def _breakCycles(self):
@@ -361,7 +366,7 @@ class AddGlyphsSheet(BaseWindowController):
         # ok button
         self.w.applyButton = vanilla.Button((-100, -30, -10, 20),
             'Add Glyphs',
-            callback=self.callbackApplyButton,
+            callback=self.callbackApplyAddGlyphsToTargetFont,
             sizeStyle='small')
         self.w.setDefaultButton(self.w.applyButton)
 
@@ -377,11 +382,11 @@ class AddGlyphsSheet(BaseWindowController):
             text = "Add %d glyphs"%len(self.theseGlyphs)
         else:
             text = "Add this glyph"
-        f = CurrentFont()
-        if f.path is not None:
-            text += " to font <%s>"%os.path.basename(f.path)
-        else:
-            text += " to <Unsaved UFO>"
+        if self.targetFont is not None:
+            if self.targetFont.path is not None:
+                text += " to font <%s>"%os.path.basename(self.targetFont.path)
+            else:
+                text += " to <Unsaved UFO>"
         text += "."
         self.w.namesCaption = vanilla.TextBox((40, 30, -10, 20), text)
         self.w.markGlyphsCheck = vanilla.CheckBox((50, 60, 150, 20), "Mark new glyphs", value=True)
@@ -763,12 +768,9 @@ def findText(data, text):
     # find the names for this text
     results = []
     need = [ord(c) for c in text]
-    #print("need ", need )
     for name, glyph in data.items():
         if glyph.uni in need:
             results.append(glyph)
-    #print('results', results)
-    #print("sortByUnicode(results)", sortByUnicode(results))
     return sortByUnicode(results)
 
 def findCategory(data, category):
@@ -839,7 +841,7 @@ class Browser(object):
         catWidth = 320
 
         self.w = vanilla.Window((1200, 500), 
-            ("GlyphNameBrowser with %s and %s"%(self.unicodeVersion, versionString)), 
+            ("GlyphBrowser with %s and %s"%(self.unicodeVersion, versionString)), 
             minSize=(800, 500),
             autosaveName = "com.letterror.glyphBrowser.mainWindow",
             )
@@ -905,7 +907,6 @@ class Browser(object):
             selectionCallback=self.callbackGlyphNameSelect,
             otherApplicationDropSettings=dropSettings,
             menuCallback = self.namesMenu_buildMenu,
-
         )
         self.w.selectionUnicodeText = vanilla.EditText((0, 0, -0, topRow-5), placeholder=choice(glyphNameBrowserNames), callback=self.callbackEditUnicodeText)
         s = self.w.selectionUnicodeText.getNSTextField()
@@ -942,27 +943,43 @@ class Browser(object):
         self.w.catNames.setSelection([0])
     
     def namesMenu_buildMenu(self, sender):
-        items = []
-        sel  = sender.getSelection()
-        if len(sel) == 1:
-            nameObj = self.currentSelection[0]
-            thisName = nameObj.getAllNames()[0]
-            items.append(dict(title="Edit %s" % thisName))
-            items.append(dict(title="Copy hex 0x%02x" % nameObj.uni))
-            items.append(dict(title="Lookup %s" % thisName, callback = self.callbackLookup))
+        try:
+            items = []
+            sel  = sender.getSelection()
+            allNames = []
+            for nameObj in self.currentSelection:
+                allNames += nameObj.getAllNames() 
+            if len(sel) == 1:
+                nameObj = self.currentSelection[0]
+                allNames += nameObj.getAllNames() 
+                thisName = nameObj.getAllNames()[0]
+                items.append(dict(title="Edit %s" % thisName))
+                items.append(dict(title="Lookup %s" % thisName, callback = self.callbackLookup))
+                items.append("----")
+                fontTitle = "Add 1 glyph to Font"
+            else:
+                fontTitle = "Add %d glyphs to Font" % len(allNames)
+            copySubMenu = []
+            copySubMenu.append(dict(title="Copy as Unicode Text", callback = self.menuCallbackCopyUnicodeText))
+            copySubMenu.append(dict(title="Copy as Slashed Names", callback = self.menuCallbackCopySlash))
+            copySubMenu.append(dict(title="Copy as Comma Separated Strings", callback = self.menuCallbackCopyStrings))
+            copySubMenu.append(dict(title="Copy Space Separated Names", callback = self.menuCallbackCopyNames))
+            copySubMenu.append(dict(title="Copy as Feature Group", callback = self.menuCallbackCopyFeature))
+
+            items.append(dict(title="Copy Names", items=copySubMenu))
             items.append("----")
-        items.append(dict(title="Copy Names", callback = self.menuCallbackCopyNames))
-        items.append(dict(title="Copy as Comma Separated Strings", callback = self.menuCallbackCopyStrings))
-        items.append(dict(title="Copy as Slashed Names", callback = self.menuCallbackCopySlash))
-        items.append(dict(title="Copy as Unicode Text", callback = self.menuCallbackCopyUnicodeText))
-        items.append(dict(title="Copy as Feature Group", callback = self.menuCallbackCopyFeature))
-        items.append("----")
-        items.append(dict(title="Add to Font"))
-        items.append(dict(title="Show in Spacecenter"))
-        # for nameObj in self.currentSelection:
-        #     names = nameObj.getAllNames()
-        #     for n in names:
-        #         items.append(dict(title="Add %s" % n))
+            fontSubMenu = []
+            for f in AllFonts():
+                fontSubMenu.append(dict(title=os.path.basename(f.path), callback=self.menuCallbackCopyToUFO, tag="lala"))
+            items.append(dict(title=fontTitle, items=fontSubMenu))
+            #items.append(dict(title="Add to Font"))
+            items.append(dict(title="Show in Spacecenter"))
+            # for nameObj in self.currentSelection:
+            #     names = nameObj.getAllNames()
+            #     for n in names:
+            #         items.append(dict(title="Add %s" % n))
+        except:
+            print("Error making Menu", traceback.format_exc())
         return items
         
     def callbackDropOnLocationList(self, sender, dropInfo):
@@ -1012,7 +1029,6 @@ class Browser(object):
             # nothing to accept
             return False
 
-    
     def checkSampleSize(self):
         text = self.w.selectionUnicodeText.get()
         minFontSize = 20
@@ -1121,12 +1137,15 @@ class Browser(object):
             self._names = []
         self.checkSampleSize()
 
-    def callbackOpenGlyphSheet(self, sender):
+    def callbackOpenGlyphSheet(self, sender=None, targetFont=None):
         theseGlyphs = self.currentSelection
+        if targetFont is None:
+            targetFont = CurrentFont
         self._addGlyphsSheet = AddGlyphsSheet(theseGlyphs,
             self.w,
             self.callbackCancelGlyphsSheet,
             self.callbackApplyGlyphsSheet,
+            targetFont = targetFont
         )
 
     def callbackCancelGlyphsSheet(self, sender):
@@ -1204,29 +1223,35 @@ class Browser(object):
         ], None)
         pb.setString_forType_(text,  NSPasteboardTypeString)
 
+    def menuCallbackCopyToUFO(self, item):
+        #@@
+        ufoName = item.title()
+        try:
+            for f in AllFonts():
+                if os.path.basename(f.path) == str(ufoName):
+                    self.callbackOpenGlyphSheet(targetFont=f)
+                    break
+        except:
+            print("Error making Menu", traceback.format_exc())
+                           
     def menuCallbackCopyFeature(self, item):
         # called from the menu, redirect to copyNamesCallback
-        print("menuCallbackCopyFeature")
         self.copyNamesCallback(what="feature")
 
     def menuCallbackCopyNames(self, item):
         # called from the menu, redirect to copyNamesCallback
-        print("menuCallbackCopyNames")
         self.copyNamesCallback(what="names")
     
     def menuCallbackCopyStrings(self, item):
         # called from the menu, redirect to copyNamesCallback
-        print("copyNamesCallback")
         self.copyNamesCallback(what="comma")
 
     def menuCallbackCopySlash(self, item):
         # called from the menu, redirect to copyNamesCallback
-        print("menuCallbackCopySlash")
         self.copyNamesCallback(what="slash")
     
     def menuCallbackCopyUnicodeText(self, item):
         # called from the menu, redirect to copyNamesCallback
-        print("menuCallbackCopyUnicodeText")
         self.copyNamesCallback(what="unicode")
         
     def copyNamesCallback(self, sender=None, what=None):
@@ -1235,7 +1260,6 @@ class Browser(object):
             t = what
         if sender is not None:
             t = sender.tag
-        print('copyNamesCallback', t)
         if t == None:
             return
         names = []
@@ -1252,11 +1276,10 @@ class Browser(object):
             copyable = "[%s]"%" ".join(names)
         elif t == "unicode":
             copyable = ''.join([nameObj.unicodeString for nameObj in self.currentSelection])
-        #print("copyable", copyable)
         self._toPasteBoard(copyable)
         self.w.caption.set("%d names to clipboard!"%(len(names)))
     
-    def toSpaceCenter(self, semder):
+    def toSpaceCenter(self, sender):
         # copy the current selection to spacecenter
         names = []
         copyable = ""
