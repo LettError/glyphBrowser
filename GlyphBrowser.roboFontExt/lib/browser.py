@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 import os
+import objc
 import AppKit
 import unicodeRangeNames
 import traceback
@@ -7,6 +8,7 @@ import traceback
 import mojo
 from mojo.roboFont import version
 import mojo.UI
+from imageMapImageCell import ImageMapImageCell
 
 if version >= "3.0":
     from importlib import reload
@@ -63,7 +65,6 @@ glyphNameBrowserNames = [
     '\u2714\ufe0e\u0262\u029f\u028f\u1d18\u029c\u0299\u0280\u1d0f\u1d21s\u1d07\u0280',
     '\u2714\ufe0eGLYPHBROWSER',
     '\u2714GlyphBrowser',
-    '\u0001d572\U0001d577\U0001d584\U0001d57b\U0001d573\U0001d56d\U0001d57d\U0001d57a\U0001d582\U0001d57e\U0001d570\U0001d57d',
 ]
 
 unicodeCategoryNames = {
@@ -149,28 +150,6 @@ joiningTypesimageMap = dict(
     #T=_joiningTypeImage_T,
     X=_joiningTypeImage_none,
 )
-
-# NSOBject Hack, please remove before release.
-def ClassNameIncrementer(clsName, bases, dct):
-   import objc
-   orgName = clsName
-   counter = 0
-   while 1:
-       try:
-           objc.lookUpClass(clsName)
-       except objc.nosuchclass_error:
-           break
-       counter += 1
-       clsName = orgName + str(counter)
-   return type(clsName, bases, dct)
-
-class JoiningTypesNSImageCell(AppKit.NSTextFieldCell, metaclass=ClassNameIncrementer):
-    def drawWithFrame_inView_(self, frame, view):
-        value = self.objectValue()
-        if value in joiningTypesimageMap:
-            image = joiningTypesimageMap[value]
-            x, y = frame.origin
-            image.drawInRect_(((x, y), (view.rowHeight(), view.rowHeight())))
 
 def extractUnicodesFromEncodingFile(path):
     # read glyphnames from encoding file
@@ -369,7 +348,6 @@ class AddGlyphsSheet(BaseWindowController):
         self.w.namesCaption = vanilla.TextBox((40, 30, -10, 20), text)
         self.w.markGlyphsCheck = vanilla.CheckBox((50, 60, 150, 20), "Mark new glyphs", value=True)
         self.w.selectGlyphsCheck = vanilla.CheckBox((50, 85, 150, 20), "Select new glyphs", value=True)
-
 
 
 class SimpleGlyphName(object):
@@ -827,6 +805,8 @@ class Browser(object):
             columnDescriptions=columnDescriptions,
             selectionCallback=self.callbackCatNameSelect)
         charWidth = 18
+        imageCell = ImageMapImageCell.alloc().init()
+        imageCell.setImages(joiningTypesimageMap)
         columnDescriptions = [
             {    'title': u"❡",
                  'key': 'nameinfont',
@@ -849,7 +829,7 @@ class Browser(object):
             {    'title': "jT",
                  'key': 'joiningType',
                  'width': 50,
-                 'cell':JoiningTypesNSImageCell.alloc().init()
+                 'cell':imageCell
                  },
             {    'title': "Char",
                  'key': 'string',
@@ -887,12 +867,6 @@ class Browser(object):
         self.w.bind("became main", self.callbackWindowMain)
         self.w.setDefaultButton(self.w.addGlyphPanelButton)
 
-        # self.w.toSpaceCenter.enable(True)
-        # self.w.copyAsPython.enable(True)
-        # self.w.copyAsUnicodeText.enable(True)
-        # self.w.copyAsGlyphNames.enable(True)
-        # self.w.copyAsUnicodeText.enable(True)
-
         self.w.addGlyphPanelButton.enable(False)
         self.w.toSpaceCenter.enable(False)
         self.update()
@@ -922,6 +896,7 @@ class Browser(object):
             copySubMenu.append(dict(title="Copy as Comma Separated Strings", callback = self.menuCallbackCopyStrings))
             copySubMenu.append(dict(title="Copy as Space Separated Names", callback = self.menuCallbackCopyNames))
             copySubMenu.append(dict(title="Copy as Hex Unicode", callback = self.menuCallbackCopyHexUnicode))
+            copySubMenu.append(dict(title="Copy as Escaped Unicode String", callback = self.menuCallbackCopyEscapedUnicode))
             copySubMenu.append(dict(title="Copy as Feature Group", callback = self.menuCallbackCopyFeature))
 
             items.append(dict(title="Copy Names", items=copySubMenu))
@@ -1196,7 +1171,10 @@ class Browser(object):
     
     def menuCallbackCopyHexUnicode(self, item):
         self.copyNamesCallback(what="hexnumbers")
-        
+    
+    def menuCallbackCopyEscapedUnicode(self, item):
+        self.copyNamesCallback(what="escaped")
+
     def menuCallbackCopyFeature(self, item):
         self.copyNamesCallback(what="feature")
 
@@ -1224,6 +1202,8 @@ class Browser(object):
         for nameObj in self.currentSelection:
             names += nameObj.getAllNames()
         copyable = ""
+        unitext = ''.join([nameObj.unicodeString for nameObj in self.currentSelection])
+        print("unitext", unitext)
         if t == "names":
             copyable = " ".join(names)
         elif t == "comma":
@@ -1233,9 +1213,12 @@ class Browser(object):
         elif t == "feature":
             copyable = "[%s]"%" ".join(names)
         elif t == "unicode":
-            copyable = ''.join([nameObj.unicodeString for nameObj in self.currentSelection])
+            copyable = unitext
         elif t == "hexnumbers":
             copyable = ' '.join(["0x%04x" % nameObj.uni for nameObj in self.currentSelection])
+        elif t == "escaped":
+            copyable = unitext.encode('ascii', 'backslashreplace')
+        print("copyable", copyable)
         self._toPasteBoard(copyable)
         self.w.caption.set("%d names to clipboard!"%(len(names)))
     
