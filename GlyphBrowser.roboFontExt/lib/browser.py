@@ -128,7 +128,6 @@ from fontTools.ttLib import TTFont, TTLibError
 genericListPboardType = "genericListPboardType"
 
 glyphBrowserBundle = mojo.extensions.ExtensionBundle("GlyphBrowser")
-print("glyphBrowserBundle", glyphBrowserBundle)
 
 def makeNSImage(path):
     return AppKit.NSImage.alloc().initWithContentsOfFile_(path)
@@ -140,17 +139,7 @@ _joiningTypeImage_R = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(
 _joiningTypeImage_U = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "joiningtype_U.pdf"))
 _joiningTypeImage_T = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "joiningtype_U.pdf"))
 _joiningTypeImage_none = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "joiningtype_none.pdf"))
-_inFontImage = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "inFont.pdf"))
-_inFontImage_unicode = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "inFont_unicode.pdf"))
-_inFontImage_both = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "inFont_both.pdf"))
-_inFontImage_none = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "inFont_none.pdf"))
 
-inFontImagesMap = dict(
-    F = _inFontImage,
-    U = _inFontImage_unicode,
-    X = _inFontImage_none,
-    FU = _inFontImage_both
-    )
 joiningTypesimageMap = dict(
     C=_joiningTypeImage_C,
     D=_joiningTypeImage_D,
@@ -161,8 +150,7 @@ joiningTypesimageMap = dict(
     X=_joiningTypeImage_none,
 )
 
-
-#NSOBject Hack, please remove before release.
+# NSOBject Hack, please remove before release.
 def ClassNameIncrementer(clsName, bases, dct):
    import objc
    orgName = clsName
@@ -176,7 +164,6 @@ def ClassNameIncrementer(clsName, bases, dct):
        clsName = orgName + str(counter)
    return type(clsName, bases, dct)
 
-
 class JoiningTypesNSImageCell(AppKit.NSTextFieldCell, metaclass=ClassNameIncrementer):
     def drawWithFrame_inView_(self, frame, view):
         value = self.objectValue()
@@ -184,15 +171,6 @@ class JoiningTypesNSImageCell(AppKit.NSTextFieldCell, metaclass=ClassNameIncreme
             image = joiningTypesimageMap[value]
             x, y = frame.origin
             image.drawInRect_(((x, y), (view.rowHeight(), view.rowHeight())))
-
-class InFontNSImageCell(AppKit.NSTextFieldCell, metaclass=ClassNameIncrementer):
-    def drawWithFrame_inView_(self, frame, view):
-        value = self.objectValue()
-        if value in inFontImagesMap:
-            image = inFontImagesMap[value]
-            x, y = frame.origin
-            image.drawInRect_(((x, y), (view.rowHeight(), view.rowHeight())))
-
 
 def extractUnicodesFromEncodingFile(path):
     # read glyphnames from encoding file
@@ -397,15 +375,9 @@ class AddGlyphsSheet(BaseWindowController):
 class SimpleGlyphName(object):
 
     def __init__(self, name, srcPath):
-        global _inFontImage
-        global _inFontImage_unicode
-        global _inFontImage_none
         self.name = name
         self.srcPath = srcPath    # the filename of the document this data come from
         self.error = False
-        self._inFontImage = _inFontImage
-        self._inFontImage_unicode = _inFontImage_unicode
-        self._inFontImage_none = _inFontImage_none
         self.uni = None # The Unicode
         self.fin = None # The final name
         self.ali = [] # list of name aliases
@@ -414,15 +386,11 @@ class SimpleGlyphName(object):
         self.min = None # minuscule
         self.maj = None # majuscule
         self.cmp = None # components used to create this composite glyph
-
         self.typ = None    # BE tag
         self.con = None    # BE tag, connection
         self.lan = None    # BE tag, language
         self.jT = None
-
-
         self.other = {} # Hash of any unknown tags
-
         self.unicodeRange = None
         self.unicodeRangeName = None
         self.unicodeCategory = None
@@ -863,12 +831,10 @@ class Browser(object):
             {    'title': u"❡",
                  'key': 'nameinfont',
                  'width': charWidth,
-                 #'cell':InFontNSImageCell.alloc().init()
                  },
             {    'title': "#",
                  'key': 'unicodeinfont',
                  'width': charWidth,
-                 #'cell':InFontNSImageCell.alloc().init()
                  },
 
             {    'title': "GNUFL name",
@@ -915,16 +881,7 @@ class Browser(object):
         self.w.selectionGlyphNames = vanilla.EditText((-200, topRow+28, -5, -300), "Selectable Glyph Names", sizeStyle="small")
         self.checkSampleSize()
         self.w.addGlyphPanelButton = vanilla.Button((-200, -65, -5, 20), "Add to Font", callback=self.callbackOpenGlyphSheet)
-
-        self.w.copyAsUnicodeText = vanilla.Button((-200, -115, -5, 20), "Copy as Unicode Text", callback = self.copyNamesCallback)
-        self.w.copyAsUnicodeText.tag = "unicode"
-        self.w.copyAsGlyphNames = vanilla.Button((-200, -140, -5, 20), "Copy as /names", callback=self.copyNamesCallback)
-        self.w.copyAsGlyphNames.tag = "slash"
-        self.w.copyAsPython = vanilla.Button((-200, -165, -5, 20), "Copy as \"strings\",", callback=self.copyNamesCallback)
-        self.w.copyAsPython.tag = "comma"
-        self.w.toSpaceCenter = vanilla.Button((-200, -190, -5, 20), "To Spacecenter", callback = self.toSpaceCenter)
-
-        
+        self.w.toSpaceCenter = vanilla.Button((-200, -115, -5, 20), "To Spacecenter", callback = self.toSpaceCenter)
         self.w.lookupSelected = vanilla.Button((-200, -90, -5, 20), "Lookup", callback=self.callbackLookup)
         self.w.progress = vanilla.TextBox((-190, -35, -10, 40), "", sizeStyle="small")
         self.w.bind("became main", self.callbackWindowMain)
@@ -937,7 +894,7 @@ class Browser(object):
         # self.w.copyAsUnicodeText.enable(True)
 
         self.w.addGlyphPanelButton.enable(False)
-
+        self.w.toSpaceCenter.enable(False)
         self.update()
         self.w.open()
         self.w.catNames.setSelection([0])
@@ -963,7 +920,8 @@ class Browser(object):
             copySubMenu.append(dict(title="Copy as Unicode Text", callback = self.menuCallbackCopyUnicodeText))
             copySubMenu.append(dict(title="Copy as Slashed Names", callback = self.menuCallbackCopySlash))
             copySubMenu.append(dict(title="Copy as Comma Separated Strings", callback = self.menuCallbackCopyStrings))
-            copySubMenu.append(dict(title="Copy Space Separated Names", callback = self.menuCallbackCopyNames))
+            copySubMenu.append(dict(title="Copy as Space Separated Names", callback = self.menuCallbackCopyNames))
+            copySubMenu.append(dict(title="Copy as Hex Unicode", callback = self.menuCallbackCopyHexUnicode))
             copySubMenu.append(dict(title="Copy as Feature Group", callback = self.menuCallbackCopyFeature))
 
             items.append(dict(title="Copy Names", items=copySubMenu))
@@ -1129,10 +1087,12 @@ class Browser(object):
 
         if f is not None:
             self.w.addGlyphPanelButton.enable(True)
+            self.w.toSpaceCenter.enable(True)
             self._unicodes = list(set([g.unicode for g in f]))
             self._names = f.keys()
         else:
             self.w.addGlyphPanelButton.enable(False)
+            self.w.toSpaceCenter.enable(False)
             self._unicodes = []
             self._names = []
         self.checkSampleSize()
@@ -1233,25 +1193,23 @@ class Browser(object):
                     break
         except:
             print("Error making Menu", traceback.format_exc())
-                           
+    
+    def menuCallbackCopyHexUnicode(self, item):
+        self.copyNamesCallback(what="hexnumbers")
+        
     def menuCallbackCopyFeature(self, item):
-        # called from the menu, redirect to copyNamesCallback
         self.copyNamesCallback(what="feature")
 
     def menuCallbackCopyNames(self, item):
-        # called from the menu, redirect to copyNamesCallback
         self.copyNamesCallback(what="names")
     
     def menuCallbackCopyStrings(self, item):
-        # called from the menu, redirect to copyNamesCallback
         self.copyNamesCallback(what="comma")
 
     def menuCallbackCopySlash(self, item):
-        # called from the menu, redirect to copyNamesCallback
         self.copyNamesCallback(what="slash")
     
     def menuCallbackCopyUnicodeText(self, item):
-        # called from the menu, redirect to copyNamesCallback
         self.copyNamesCallback(what="unicode")
         
     def copyNamesCallback(self, sender=None, what=None):
@@ -1276,6 +1234,8 @@ class Browser(object):
             copyable = "[%s]"%" ".join(names)
         elif t == "unicode":
             copyable = ''.join([nameObj.unicodeString for nameObj in self.currentSelection])
+        elif t == "hexnumbers":
+            copyable = ' '.join(["0x%04x" % nameObj.uni for nameObj in self.currentSelection])
         self._toPasteBoard(copyable)
         self.w.caption.set("%d names to clipboard!"%(len(names)))
     
