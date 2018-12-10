@@ -302,15 +302,15 @@ class AddGlyphsSheet(BaseWindowController):
                 g.width = 500    # default Width
                 if variantName == variantNames[0]:
                     g.unicode = glyph.uni
-                print("variant unicode", variantName, n2u(variantName))
+                #print("variant unicode", variantName, n2u(variantName))
                 newGlyphs[g.name] = g.unicode
                 if self.w.markGlyphsCheck.get():
-                    if version < '2.0':
+                    if version >= "3.0":
+                        # RF 3.0
+                        g.markColor = (0, 0.95, 0.95, .25)
+                    else:
                         # RF 1.8.x
                         g.mark = (0, 0.95, 0.95, .25)
-                    else:
-                        # RF 2.0
-                        g.markColor = (0, 0.95, 0.95, .25)
                 selection.append(variantName)
         if self.w.selectGlyphsCheck.get():
             self.targetFont.selection = selection
@@ -373,10 +373,10 @@ class AddGlyphsSheet(BaseWindowController):
         cD = [
                 {    'title': u"Unicode",
                      'key': 'value',
-                     'width': 50},
+                     'width': 80},
                 {    'title': u"Char",
                      'key': 'string',
-                     'width': 50},
+                     'width': 60},
                 {    'title': u"GNUFL Name",
                      'key': 'name',
                      'width': 200},
