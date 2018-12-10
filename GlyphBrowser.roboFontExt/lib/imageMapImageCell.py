@@ -11,5 +11,8 @@ class ImageMapImageCell(AppKit.NSTextFieldCell):
         value = self.objectValue()
         if value in self._imageMap:
             image = self._imageMap[value]
+            srcWidth, srcHeight = image.size()
+            viewHeight = view.rowHeight()
+            scaledWidth = srcWidth / (srcHeight / viewHeight)
             x, y = frame.origin
-            image.drawInRect_(((x, y), (view.rowHeight(), view.rowHeight())))
+            image.drawInRect_(((x, y), (scaledWidth, view.rowHeight())))
