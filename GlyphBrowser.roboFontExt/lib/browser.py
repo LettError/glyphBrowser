@@ -1,9 +1,15 @@
 # -*- coding: UTF-8 -*-
 import os
+import objc
 import AppKit
 import unicodeRangeNames
+import traceback
 
+import mojo
 from mojo.roboFont import version
+import mojo.UI
+from imageMapImageCell import ImageMapImageCell
+
 if version >= "3.0":
     from importlib import reload
 reload(unicodeRangeNames)
@@ -33,6 +39,7 @@ from unicodeRangeNames import getRangeName, getRangeAndName, getPlaneName
 import unicodedata
 import vanilla
 
+from AppKit import NSPasteboardTypeString, NSPasteboard
 
 from mojo.roboFont import version
 
@@ -58,7 +65,6 @@ glyphNameBrowserNames = [
     '\u2714\ufe0e\u0262\u029f\u028f\u1d18\u029c\u0299\u0280\u1d0f\u1d21s\u1d07\u0280',
     '\u2714\ufe0eGLYPHBROWSER',
     '\u2714GlyphBrowser',
-    '\U0001d572\U0001d577\U0001d584\U0001d57b\U0001d573\U0001d56d\U0001d57d\U0001d57a\U0001d582\U0001d57e\U0001d570\U0001d57d',
 ]
 
 unicodeCategoryNames = {
@@ -116,10 +122,34 @@ fontLabNames = {
 
 }
 
+
 import time
 from fontTools.ttLib import TTFont, TTLibError
 
 genericListPboardType = "genericListPboardType"
+
+glyphBrowserBundle = mojo.extensions.ExtensionBundle("GlyphBrowser")
+
+def makeNSImage(path):
+    return AppKit.NSImage.alloc().initWithContentsOfFile_(path)
+
+_joiningTypeImage_C = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "joiningtype_C.pdf"))
+_joiningTypeImage_D = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "joiningtype_D.pdf"))
+_joiningTypeImage_L = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "joiningtype_L.pdf"))
+_joiningTypeImage_R = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "joiningtype_R.pdf"))
+_joiningTypeImage_U = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "joiningtype_U.pdf"))
+_joiningTypeImage_T = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "joiningtype_U.pdf"))
+_joiningTypeImage_none = makeNSImage(os.path.join(glyphBrowserBundle.resourcesPath(), "joiningtype_none.pdf"))
+
+joiningTypesimageMap = dict(
+    C=_joiningTypeImage_C,
+    D=_joiningTypeImage_D,
+    L=_joiningTypeImage_L,
+    R=_joiningTypeImage_R,
+    #U=_joiningTypeImage_U,
+    #T=_joiningTypeImage_T,
+    X=_joiningTypeImage_none,
+)
 
 def extractUnicodesFromEncodingFile(path):
     # read glyphnames from encoding file
@@ -209,11 +239,14 @@ class AddGlyphsSheet(BaseWindowController):
             parentWindow,
             cancelCallback,
             applyCallback,
+            targetFont = None
             ):
         self.theseGlyphs = theseGlyphs    # list of these unicode glyph objects
+        self.targetFont = targetFont
         self.cancelCallback = cancelCallback
         self.applyCallback = applyCallback
         self.buildBaseWindow(parentWindow)
+        self.makeFinalNamesList()
 
     def callbackCancelButton(self, sender):
         """ """
@@ -221,36 +254,70 @@ class AddGlyphsSheet(BaseWindowController):
             self.cancelCallback(None)
         self.close()
 
-    def callbackApplyButton(self, sender):
+    def makeFinalNamesList(self):
+        # fill the list with the names we're going to add
+        # nothing to edit here
+        names = []
+        for glyph in self.theseGlyphs:
+            variantNames = glyph.getAllNames()
+            for vn in variantNames:
+                nameItem = {}
+                vu = n2u(vn)
+                if vu is not None:
+                    nameItem['value'] = hex(vu)
+                else:
+                    nameItem['value'] = ''
+                nameItem['name'] = vn
+                nameItem['string'] = glyph.unicodeString
+                names.append(nameItem)
+        self.w.proposedNames.set(names)
+        text = ""
+        if len(self.theseGlyphs) > 1:
+            text = "Add %d unicodes, %d glyphnames" % (len(self.theseGlyphs), len(names))
+        else:
+            text = "Add this unicode"
+        if self.targetFont is not None:
+            if self.targetFont.path is not None:
+                text += " to font <%s>"%os.path.basename(self.targetFont.path)
+            else:
+                text += " to <Unsaved UFO>"
+        text += ":"
+        self.w.namesCaption.set(text)
+
+    def callbackApplyAddGlyphsToTargetFont(self, sender=None):
         # see if the current data is any different from the original data
 
         self.w.markGlyphsCheck, self.w.selectGlyphsCheck
-        f = CurrentFont()
         selection = []
         newGlyphs = {}
+        
         for glyph in self.theseGlyphs:
             variantNames = glyph.getAllNames()
             for variantName in variantNames:
-                if not variantName in f:
-                    f.newGlyph(variantName)
-                g = f[variantName]
+                if variantName in self.targetFont:
+                    continue
+                if not variantName in self.targetFont:
+                    self.targetFont.newGlyph(variantName)
+                g = self.targetFont[variantName]
+                g.width = 500    # default Width
                 if variantName == variantNames[0]:
                     g.unicode = glyph.uni
+                #print("variant unicode", variantName, n2u(variantName))
                 newGlyphs[g.name] = g.unicode
                 if self.w.markGlyphsCheck.get():
-                    if version < '2.0':
-                        # RF 1.8.x
-                        g.mark = (0, 0.95, 0.95, 1)
+                    if version >= "3.0":
+                        # RF 3.0
+                        g.markColor = (0, 0.95, 0.95, .25)
                     else:
-                        # RF 2.0
-                        g.markColor = (0, 0.95, 0.95, 1)
+                        # RF 1.8.x
+                        g.mark = (0, 0.95, 0.95, .25)
                 selection.append(variantName)
         if self.w.selectGlyphsCheck.get():
-            f.selection = selection
+            self.targetFont.selection = selection
         if self.applyCallback:
             self.applyCallback(None)
         if selection:
-            publishEvent("glyphbrowser.newGlyphs", newGlyphs=newGlyphs, font=f)
+            publishEvent("glyphbrowser.newGlyphs", newGlyphs=newGlyphs, font=self.targetFont)
         self.close()
 
     def _breakCycles(self):
@@ -265,8 +332,8 @@ class AddGlyphsSheet(BaseWindowController):
     def buildBaseWindow(self, parentWindow):
         """ Make the base window. """
         self._dirty = False
-        self._sheetWidth = 315
-        self._sheetHeight = 200
+        self._sheetWidth = 400
+        self._sheetHeight = 500
         if parentWindow is None:
             self.w = vanilla.Window((self._sheetWidth, self._sheetHeight),
                 title = self._title,
@@ -289,7 +356,7 @@ class AddGlyphsSheet(BaseWindowController):
         # ok button
         self.w.applyButton = vanilla.Button((-100, -30, -10, 20),
             'Add Glyphs',
-            callback=self.callbackApplyButton,
+            callback=self.callbackApplyAddGlyphsToTargetFont,
             sizeStyle='small')
         self.w.setDefaultButton(self.w.applyButton)
 
@@ -300,21 +367,21 @@ class AddGlyphsSheet(BaseWindowController):
         self.w.open()
 
     def fillSheet(self):
-        text = ""
-        if len(self.theseGlyphs) > 1:
-            text = "Add %d glyphs"%len(self.theseGlyphs)
-        else:
-            text = "Add this glyph"
-        f = CurrentFont()
-        if f.path is not None:
-            text += " to font <%s>"%os.path.basename(f.path)
-        else:
-            text += " to <Unsaved UFO>"
-        text += "."
-        self.w.namesCaption = vanilla.TextBox((40, 30, -10, 20), text)
-        self.w.markGlyphsCheck = vanilla.CheckBox((50, 60, 150, 20), "Mark new glyphs", value=True)
-        self.w.selectGlyphsCheck = vanilla.CheckBox((50, 85, 150, 20), "Select new glyphs", value=True)
-
+        self.w.namesCaption = vanilla.TextBox((5, 10, -10, 20), "Add these glyphs")
+        self.w.markGlyphsCheck = vanilla.CheckBox((5, 40, 150, 20), "Mark new glyphs", value=True)
+        self.w.selectGlyphsCheck = vanilla.CheckBox((5, 60, 150, 20), "Select new glyphs", value=True)
+        cD = [
+                {    'title': u"Unicode",
+                     'key': 'value',
+                     'width': 80},
+                {    'title': u"Char",
+                     'key': 'string',
+                     'width': 60},
+                {    'title': u"GNUFL Name",
+                     'key': 'name',
+                     'width': 200},
+            ]
+        self.w.proposedNames = vanilla.List((0, 90, 0, -50), [], columnDescriptions=cD)
 
 
 class SimpleGlyphName(object):
@@ -331,14 +398,11 @@ class SimpleGlyphName(object):
         self.min = None # minuscule
         self.maj = None # majuscule
         self.cmp = None # components used to create this composite glyph
-
         self.typ = None    # BE tag
         self.con = None    # BE tag, connection
         self.lan = None    # BE tag, language
         self.jT = None
-
         self.other = {} # Hash of any unknown tags
-
         self.unicodeRange = None
         self.unicodeRangeName = None
         self.unicodeCategory = None
@@ -362,7 +426,7 @@ class SimpleGlyphName(object):
             # XXXX no idea if it works this way...
             #   D Dual_Joining
             # 		&----G----&
-            'D': ['ini', 'medi', 'fina'],
+            'D': ['init', 'medi', 'fina'],
             #   C Join_Causing
             # 		&----G----&		????
             'C': [         					   ],
@@ -371,7 +435,7 @@ class SimpleGlyphName(object):
             'R': [ 				 'fina'],
             #   L Left_Joining
             # 		&----G x
-            'L': ['ini',		 'fina'],
+            'L': ['init',		 'fina'],
             #   U Non_Joining
             # 	       x G x
             'U': [         					   ],
@@ -381,7 +445,7 @@ class SimpleGlyphName(object):
         }
 
         if self.joiningType is not None:
-            variants = []
+            variants = [self.name]
             ext = extensions.get(self.joiningType)
             if ext:
                 for e in ext:
@@ -400,18 +464,18 @@ class SimpleGlyphName(object):
         d = {}
         d['name'] = self.name
         d['uni'] = self.uni
-        if self.joiningType is not None:
+        if self.joiningType is None:
+            d['joiningType'] = 'X'
+        else:
             d['joiningType'] = self.joiningType
-        else:
-            d['joiningType'] = ""
+        d['unicodeinfont'] = ''
+        d['nameinfont'] = ''
         if self.uni in fontUnicodes:
-            d['unicodeinfont'] = "*"
-        else:
-            d['unicodeinfont'] = ""
+            d['unicodeinfont'] += '•'
+            #d['unicodeinfont'] += 'F'
         if self.name in fontNames:
-            d['nameinfont'] = "•"
-        else:
-            d['nameinfont'] = ""
+            d['nameinfont'] += '•'
+            #d['nameinfont'] += 'U'
         d['string'] = self.unicodeString
         d['category'] = self.unicodeCategory
         if self.uni is not None:
@@ -473,26 +537,26 @@ class SimpleGlyphName(object):
         # return a list of all names, tags, strings that could serve as selection criteria
         allCats = []
         if self.srcPath:
-            allCats.append("📦\t%s"%self.srcPath)
+            allCats.append("\U0001f4e6\t%s"%self.srcPath)
         if self.error:
-            allCats.append("⚠️\tError")
+            allCats.append("\u26a0\ufe0f\tError")
         if self.uni is None:
             allCats.append("⋯\tNo unicode")
         if self.unicodeRangeName is not None:
             a, b = self.unicodeRange
             allCats.append("%05X\t%05X\t%s"%(a, b, self.unicodeRangeName))
         if self.unicodeCategoryName is not None:
-            allCats.append("📕\t"+ self.unicodeCategoryName)
+            allCats.append("\U0001f4c1\t"+ self.unicodeCategoryName)
         if self.uni is not None:
-            allCats.append("🔣\t"+ getPlaneName(self.uni))
+            allCats.append("\U0001f523\t"+ getPlaneName(self.uni))
         for s in self.set:
-            allCats.append("☰\t"+s)
+            allCats.append("XX\t"+s)
         if "_" in self.name:
             allCats.append("f_f_l\tCombined glyphs")
         if u"." in self.name and self.name[0]!=u".":
             # catch glyph names with extensions, but not .notdef
             extension = self.name.split(".")[-1]
-            allCats.append(u"…\t."+extension)
+            allCats.append(u"\U0001f3f7\t."+extension)
         return allCats
 
     def matchCategory(self, catName):
@@ -684,12 +748,9 @@ def findText(data, text):
     # find the names for this text
     results = []
     need = [ord(c) for c in text]
-    #print("need ", need )
     for name, glyph in data.items():
         if glyph.uni in need:
             results.append(glyph)
-    #print('results', results)
-    #print("sortByUnicode(results)", sortByUnicode(results))
     return sortByUnicode(results)
 
 def findCategory(data, category):
@@ -754,11 +815,13 @@ class Browser(object):
         self.currentSelection = []
         self._typing = False
         self.unicodeVersion = unicodeVersionString
+        
+        
         topRow = 80
         catWidth = 320
 
         self.w = vanilla.Window((1200, 500), 
-            ("GlyphNameBrowser with %s and %s"%(self.unicodeVersion, versionString)), 
+            ("GlyphBrowser with %s and %s"%(self.unicodeVersion, versionString)), 
             minSize=(800, 500),
             autosaveName = "com.letterror.glyphBrowser.mainWindow",
             )
@@ -776,13 +839,18 @@ class Browser(object):
             columnDescriptions=columnDescriptions,
             selectionCallback=self.callbackCatNameSelect)
         charWidth = 18
+        imageCell = ImageMapImageCell.alloc().init()
+        imageCell.setImages(joiningTypesimageMap)
         columnDescriptions = [
             {    'title': u"❡",
                  'key': 'nameinfont',
-                 'width': charWidth},
+                 'width': charWidth,
+                 },
             {    'title': "#",
                  'key': 'unicodeinfont',
-                 'width': charWidth},
+                 'width': charWidth,
+                 },
+
             {    'title': "GNUFL name",
                  'key': 'name',
                  'width': 200, },
@@ -794,7 +862,9 @@ class Browser(object):
                  'width': 30},
             {    'title': "jT",
                  'key': 'joiningType',
-                 'width': 30},
+                 'width': 50,
+                 'cell':imageCell
+                 },
             {    'title': "Char",
                  'key': 'string',
                  'width': 30},
@@ -803,6 +873,7 @@ class Browser(object):
                      },
             ]
         self.w.searchBox = vanilla.SearchBox((-200, topRow, -5, 22), "", callback=self.callbackSearch)
+
 
         dropSettings = {
             'type': AppKit.NSFilenamesPboardType,
@@ -814,8 +885,8 @@ class Browser(object):
             [],
             columnDescriptions=columnDescriptions,
             selectionCallback=self.callbackGlyphNameSelect,
-
             otherApplicationDropSettings=dropSettings,
+            menuCallback = self.namesMenu_buildMenu,
         )
         self.w.selectionUnicodeText = vanilla.EditText((0, 0, -0, topRow-5), placeholder=choice(glyphNameBrowserNames), callback=self.callbackEditUnicodeText)
         s = self.w.selectionUnicodeText.getNSTextField()
@@ -824,15 +895,64 @@ class Browser(object):
         self.w.selectionGlyphNames = vanilla.EditText((-200, topRow+28, -5, -300), "Selectable Glyph Names", sizeStyle="small")
         self.checkSampleSize()
         self.w.addGlyphPanelButton = vanilla.Button((-200, -65, -5, 20), "Add to Font", callback=self.callbackOpenGlyphSheet)
+        self.w.toSpaceCenter = vanilla.Button((-200, -115, -5, 20), "To Spacecenter", callback = self.toSpaceCenter)
         self.w.lookupSelected = vanilla.Button((-200, -90, -5, 20), "Lookup", callback=self.callbackLookup)
         self.w.progress = vanilla.TextBox((-190, -35, -10, 40), "", sizeStyle="small")
-        self.w.addGlyphPanelButton.enable(False)
         self.w.bind("became main", self.callbackWindowMain)
         self.w.setDefaultButton(self.w.addGlyphPanelButton)
+
+        self.w.addGlyphPanelButton.enable(False)
+        self.w.toSpaceCenter.enable(False)
         self.update()
         self.w.open()
         self.w.catNames.setSelection([0])
+    
+    def namesMenu_buildMenu(self, sender):
+        try:
+            items = []
+            sel  = sender.getSelection()
+            allNames = []
+            for nameObj in self.currentSelection:
+                allNames += nameObj.getAllNames() 
+            if len(sel) == 1:
+                nameObj = self.currentSelection[0]
+                allNames += nameObj.getAllNames() 
+                thisName = nameObj.getAllNames()[0]
+                items.append(dict(title="Edit %s" % thisName))
+                items.append(dict(title="Lookup %s" % nameObj.asU(), callback = self.callbackLookup))
+                items.append("----")
+                fontTitle = "Add 1 glyph to Font"
+            else:
+                fontTitle = "Add %d glyphs to Font" % len(allNames)
+            copySubMenu = []
+            copySubMenu.append(dict(title="Copy as Unicode Text", callback = self.menuCallbackCopyUnicodeText))
+            copySubMenu.append(dict(title="Copy as Slashed Names", callback = self.menuCallbackCopySlash))
+            copySubMenu.append(dict(title="Copy as Comma Separated Strings", callback = self.menuCallbackCopyStrings))
+            copySubMenu.append(dict(title="Copy as Space Separated Names", callback = self.menuCallbackCopyNames))
+            copySubMenu.append(dict(title="Copy as Hex Unicode", callback = self.menuCallbackCopyHexUnicode))
+            copySubMenu.append(dict(title="Copy as Escaped Unicode String", callback = self.menuCallbackCopyEscapedUnicode))
+            copySubMenu.append(dict(title="Copy as Feature Group", callback = self.menuCallbackCopyFeature))
 
+            items.append(dict(title="Copy Names", items=copySubMenu))
+            items.append("----")
+            fontSubMenu = []
+            for f in AllFonts():
+                if f.path is not None:
+                    path = f.path
+                else:
+                    path = "Unsaved UFO"
+                fontSubMenu.append(dict(title=os.path.basename(path), callback=self.menuCallbackCopyToUFO, tag="lala"))
+            items.append(dict(title=fontTitle, items=fontSubMenu))
+            #items.append(dict(title="Add to Font"))
+            items.append(dict(title="Show in Spacecenter"))
+            # for nameObj in self.currentSelection:
+            #     names = nameObj.getAllNames()
+            #     for n in names:
+            #         items.append(dict(title="Add %s" % n))
+        except:
+            print("Error making Menu", traceback.format_exc())
+        return items
+        
     def callbackDropOnLocationList(self, sender, dropInfo):
         #   handle files droppings on the list
         #       this is how the drop info comes in
@@ -879,7 +999,7 @@ class Browser(object):
         else:
             # nothing to accept
             return False
-    
+
     def checkSampleSize(self):
         text = self.w.selectionUnicodeText.get()
         minFontSize = 20
@@ -918,7 +1038,7 @@ class Browser(object):
         self.w.catNames.set(items)
         self.checkSampleSize()
 
-    def callbackLookup(self, sender):
+    def callbackLookup(self, sender=None):
         lookupThese = []
         if self.currentSelection:
             if len(self.currentSelection)!=1: return
@@ -980,20 +1100,25 @@ class Browser(object):
 
         if f is not None:
             self.w.addGlyphPanelButton.enable(True)
+            self.w.toSpaceCenter.enable(True)
             self._unicodes = list(set([g.unicode for g in f]))
             self._names = f.keys()
         else:
             self.w.addGlyphPanelButton.enable(False)
+            self.w.toSpaceCenter.enable(False)
             self._unicodes = []
             self._names = []
         self.checkSampleSize()
 
-    def callbackOpenGlyphSheet(self, sender):
+    def callbackOpenGlyphSheet(self, sender=None, targetFont=None):
         theseGlyphs = self.currentSelection
+        if targetFont is None:
+            targetFont = CurrentFont()
         self._addGlyphsSheet = AddGlyphsSheet(theseGlyphs,
             self.w,
             self.callbackCancelGlyphsSheet,
             self.callbackApplyGlyphsSheet,
+            targetFont = targetFont
         )
 
     def callbackCancelGlyphsSheet(self, sender):
@@ -1061,6 +1186,96 @@ class Browser(object):
             query = "Unicode in {%s}"%",".join(selectedUniNumbers)
             queryObj = NSPredicate.predicateWithFormat_(query)
             CurrentFontWindow().getGlyphCollection().setQuery(queryObj)
+    
+    # stuff to clipboard
+    def _toPasteBoard(self, text):
+        pb = NSPasteboard.generalPasteboard()
+        pb.clearContents()
+        pb.declareTypes_owner_([
+            NSPasteboardTypeString,
+        ], None)
+        pb.setString_forType_(text,  NSPasteboardTypeString)
+
+    def menuCallbackCopyToUFO(self, item):
+        #@@
+        ufoName = item.title()
+        try:
+            for f in AllFonts():
+                if os.path.basename(f.path) == str(ufoName):
+                    self.callbackOpenGlyphSheet(targetFont=f)
+                    break
+        except:
+            print("Error making Menu", traceback.format_exc())
+    
+    def menuCallbackCopyHexUnicode(self, item):
+        self.copyNamesCallback(what="hexnumbers")
+    
+    def menuCallbackCopyEscapedUnicode(self, item):
+        self.copyNamesCallback(what="escaped")
+
+    def menuCallbackCopyFeature(self, item):
+        self.copyNamesCallback(what="feature")
+
+    def menuCallbackCopyNames(self, item):
+        self.copyNamesCallback(what="names")
+    
+    def menuCallbackCopyStrings(self, item):
+        self.copyNamesCallback(what="comma")
+
+    def menuCallbackCopySlash(self, item):
+        self.copyNamesCallback(what="slash")
+    
+    def menuCallbackCopyUnicodeText(self, item):
+        self.copyNamesCallback(what="unicode")
+        
+    def copyNamesCallback(self, sender=None, what=None):
+        t = None
+        if what is not None:
+            t = what
+        if sender is not None:
+            t = sender.tag
+        if t == None:
+            return
+        names = []
+        for nameObj in self.currentSelection:
+            names += nameObj.getAllNames()
+        copyable = ""
+        unitext = ''.join([nameObj.unicodeString for nameObj in self.currentSelection])
+        print("unitext", unitext)
+        if t == "names":
+            copyable = " ".join(names)
+        elif t == "comma":
+            copyable = ", ".join(["\"%s\""%s for s in names])
+        elif t == "slash":
+            copyable = "/"+"/".join(names)
+        elif t == "feature":
+            copyable = "[%s]"%" ".join(names)
+        elif t == "unicode":
+            copyable = unitext
+        elif t == "hexnumbers":
+            copyable = ' '.join(["0x%04x" % nameObj.uni for nameObj in self.currentSelection])
+        elif t == "escaped":
+            copyable = unitext.encode('ascii', 'backslashreplace')
+        print("copyable", copyable)
+        self._toPasteBoard(copyable)
+        self.w.caption.set("%d names to clipboard!"%(len(names)))
+    
+    def toSpaceCenter(self, sender):
+        # copy the current selection to spacecenter
+        names = []
+        copyable = ""
+        for nameObj in self.currentSelection:
+            names += nameObj.getAllNames()
+            copyable = "/"+"/".join(names)
+        setSomething = False
+        for spaceCenter in mojo.UI.AllSpaceCenters():
+            spaceCenter.setRaw(copyable)
+            setSomething = True
+        if not setSomething:
+            # open a new spacecenter for the currentfont
+            f = CurrentFont()
+            if f is not None:
+                mojo.UI.OpenSpaceCenter(f, newWindow=True)
 
 
 if __name__ == "__main__":
