@@ -880,14 +880,23 @@ class Browser(object):
             'callback': self.callbackDropOnLocationList,
             'allowDropBetweenRows': False
         }
-        self.w.selectedNames = vanilla.List(
-            (catWidth+10, topRow, -205, -5),
-            [],
-            columnDescriptions=columnDescriptions,
-            selectionCallback=self.callbackGlyphNameSelect,
-            otherApplicationDropSettings=dropSettings,
-            menuCallback = self.namesMenu_buildMenu,
-        )
+        if version >= "3.2":
+            self.w.selectedNames = vanilla.List(
+                (catWidth+10, topRow, -205, -5),
+                [],
+                columnDescriptions=columnDescriptions,
+                selectionCallback=self.callbackGlyphNameSelect,
+                otherApplicationDropSettings=dropSettings,
+                menuCallback = self.namesMenu_buildMenu,
+            )
+        else:
+            self.w.selectedNames = vanilla.List(
+                (catWidth+10, topRow, -205, -5),
+                [],
+                columnDescriptions=columnDescriptions,
+                selectionCallback=self.callbackGlyphNameSelect,
+                otherApplicationDropSettings=dropSettings,
+            )
         self.w.selectionUnicodeText = vanilla.EditText((0, 0, -0, topRow-5), placeholder=choice(glyphNameBrowserNames), callback=self.callbackEditUnicodeText)
         s = self.w.selectionUnicodeText.getNSTextField()
         s.setFocusRingType_(NSFocusRingTypeNone)
