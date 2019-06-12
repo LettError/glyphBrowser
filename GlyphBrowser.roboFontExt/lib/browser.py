@@ -913,6 +913,7 @@ class Browser(object):
         self.w.addGlyphPanelButton.enable(False)
         self.w.toSpaceCenter.enable(False)
         self.update()
+        self.w.bind("close", self.windowClosing)
         self.w.open()
         self.w.catNames.setSelection([0])
     
@@ -1046,6 +1047,10 @@ class Browser(object):
         #items = [dict(name=name) for name in self.catNames]
         self.w.catNames.set(items)
         self.checkSampleSize()
+    
+    def windowClosing(self, sender):
+        # Reset the font window glyph collection query
+        CurrentFontWindow().getGlyphCollection().setQuery(None)
 
     def callbackLookup(self, sender=None):
         lookupThese = []
