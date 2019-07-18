@@ -5,8 +5,8 @@
 # C Join_Causing
 # U Non_Joining
 # T Transparent
-# Generated on 2018 12 03 21:57:05
-# Source: # ArabicShaping-11.0.0.txt
+# Generated on 2019 07 18 09:45:12
+# Source: # ArabicShaping-12.1.0.txt
 # <unicode> <joiningtype>
 00600	U
 00601	U
@@ -744,3 +744,4 @@
 1E941	D
 1E942	D
 1E943	D
+1E94B	T
