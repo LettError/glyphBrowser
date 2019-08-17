@@ -1,0 +1,64 @@
+<html>
+<meta charset="utf-8">
+    <head>
+        <title>LettError GlyphBrowser Help</title>
+    
+
+<style>
+body{
+	font-family: "Menlo-Regular", Sans;
+	font-size: 85%;
+	line-height: 130%;
+}
+img{width: 100%;}
+p{
+	font-size: 85%;
+	line-height: 140%;
+}
+li{
+	font-size: 85%;
+	line-height: 140%;
+
+}
+code{
+	font-size: 140%;
+}
+</style>
+    </head>
+    <body>
+
+<img src="icon.png">
+
+
+<img src="GlyphBrowserMechanicIcon.png">
+
+<h1>GlyphBrowser for RoboFont</h1>
+
+<p>The GlyphBrowser tool for <a href="https://robofont.com">RoboFont</a> shows a list of unicode values and glyphnames from the <a href="https://github.com/LettError/glyphNameFormatter">GlyphNameFormatter</a> project. You can search and select names and then create these glyphs in the current font. GlyphBrowser contains a copy of the latest GlyphNameFormatter GNUFL list, but they're separate projects.</p>
+
+<img src="screen.png">
+
+<h2>Usage</h2>
+<p>
+	<ul>
+		<li>You can copy / paste / type text in the big bar at the top. The relevant unicode characters are listed</li>
+		<li>Use the search field for glyph names, partial names or unicode values</li>
+		<li>For Arabic glyph names, the joining types data from Unicode will be used to construct appropriate variants. For instance, <code>0x00628</code>, <b>beh</b>, will generate <code>/beh /beh.init /beh.medi /beh.fina</code>
+		<li>Please note that additional support may be needed to make the selected characters into working fonts. RoboFont does not automatically support everything.</li>
+	</ul>
+	</p>
+
+
+<h2>Reporting</h2>
+<p>GlyphNameFormatter and GlyphBrowser are very much community projects and they rely on your feedback.
+	<ul>
+		<li>
+			Please report any issues with the Browser <a href="https://github.com/LettError/glyphBrowser/issues">on the GitHub page for GlyphBrowser</a>.
+		</li>
+		<li>
+			If you would like to report an issue on any of the <em>glyph names or unicode values</em>, please open an issue on <a href="https://github.com/LettError/glyphNameFormatter/issues">on the GitHub page for GlyphNameFormatter</a>
+		</li>
+	</ul>
+
+    </body>
+</html>

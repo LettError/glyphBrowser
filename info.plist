@@ -10,26 +10,31 @@
 			<key>preferredName</key>
 			<string>GlyphBrowser</string>
 			<key>shortKey</key>
-			<string>g</string>
+			<string></string>
 		</dict>
 	</array>
 	<key>developer</key>
 	<string>LettError</string>
 	<key>developerURL</key>
-	<string>http://letterror.com/tools.html</string>
+	<string>http://letterror.com</string>
 	<key>html</key>
-	<true/>
-	<key>launchAtStartUp</key>
 	<false/>
+	<key>launchAtStartUp</key>
+	<integer>0</integer>
+	<key>mainScript</key>
+	<string></string>
 	<key>name</key>
 	<string>GlyphBrowser</string>
-	<key>requiresVersionMajor</key>
-	<string>3</string>
-	<key>requiresVersionMinor</key>
-	<string>2</string>
 	<key>timeStamp</key>
-	<real>1566031580.4564691</real>
+	<real>1550523000.496088</real>
 	<key>version</key>
-	<string>2.6.1</string>
+	<string>2.6</string>
+	<key>com.robofontmechanic.Mechanic</key>
+	<dict>
+		<key>repository</key>
+		<string>LettError/glyphBrowser</string>
+		<key>summary</key>
+		<string>A tool to browse and select unicode characters.</string>
+	</dict>
 </dict>
 </plist>

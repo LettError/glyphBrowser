@@ -37,3 +37,4 @@ text("12", (256, h-f*3*s))
 
 saveImage("icon.pdf")
 saveImage("GlyphBrowserMechanicIcon.png")
+saveImage("html/GlyphBrowserMechanicIcon.png")
