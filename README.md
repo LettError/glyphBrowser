@@ -8,13 +8,7 @@ A RoboFont extension for browsing and selecting unicode values, glyphnames, cate
 * Add selected names to the currently open font.
 * Look up individual characters.
 * Paste Unicode text and extract a character list.
-
-## New:
-
-* Unicode 11.0.0
 * Drag & drop UFO, otf or ttf to the main names list and their unicode values will be used to select names.
-* More support for Unicode ranges
-* Large preview of selected characters
 * Shows Unicode categories for more characters
 
 ## Problems?

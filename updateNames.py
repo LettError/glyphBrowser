@@ -3,6 +3,9 @@
     This script copies and collects some data from the GlyphNameFormatter.
     https://github.com/LettError/glyphNameFormatter
 
+    Note: don't run from RoboFont, as it will find the embedded GlyphNameFormatter,
+    and it really needs to look at the repository.
+
 
 """
 
@@ -11,7 +14,7 @@ import os, shutil, time
 import glyphNameFormatter
 
 gnfRoot = os.path.dirname(glyphNameFormatter.__file__)
-browserRoot = os.path.join(os.getcwd(), "GlyphBrowser.roboFontExt", "lib")
+browserRoot = os.path.join(os.getcwd(), "lib")
 
 # copy the latest name list
 srcNamePath = os.path.join(gnfRoot, "names", "glyphNamesToUnicodeAndCategories_experimental.txt")

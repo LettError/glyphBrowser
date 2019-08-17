@@ -4,6 +4,8 @@ import os
 from mojo.extensions import ExtensionBundle
 from mojo.UI import createModifier
 
+print("did you update the names?")
+
 #modifier = createModifier(command=True, shift=True)
 #print(f"({modifier}, ']')")
 
