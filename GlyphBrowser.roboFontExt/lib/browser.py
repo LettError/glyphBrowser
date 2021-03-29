@@ -1143,6 +1143,7 @@ class Browser(object):
 
     def callbackGlyphNameSelect(self, sender):
         f = CurrentFont()
+        existingCharacters = set([chr(u) for u in f.getCharacterMapping().keys()])
         existing = 0
         new = 0
         glyphNames = u""
@@ -1156,15 +1157,19 @@ class Browser(object):
         for i in selected:
             name = self.w.selectedNames[i]['name']
             glyphVariantNames = self.data[name].getAllNames()
-            selectionString += self.data[name].unicodeString
-            for variantName in glyphVariantNames:
-                glyphNames += "/%s "%variantName
-                if f is not None:
-                    if variantName in f:
-                        existing += 1
-                    else:
-                        new += 1
-            self.currentSelection.append(self.data[name])    # means they're not sorted. Problem?
+            character = self.data[name].unicodeString
+            selectionString += character
+            if character not in existingCharacters:
+                for variantName in glyphVariantNames:
+                    glyphNames += "/%s "%variantName
+                    if f is not None:
+                        if variantName in f:
+                            existing += 1
+                        else:
+                            new += 1
+                self.currentSelection.append(self.data[name])    # means they're not sorted. Problem?
+            else:
+                existing += 1
         if new == 0 and existing == 0:
             self.w.progress.set("")
         else:
