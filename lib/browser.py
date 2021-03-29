@@ -1143,7 +1143,9 @@ class Browser(object):
 
     def callbackGlyphNameSelect(self, sender):
         f = CurrentFont()
-        existingCharacters = set([chr(u) for u in f.getCharacterMapping().keys()])
+        existingCharacters = set()
+        if f is not None:
+            existingCharacters.update([chr(u) for u in f.getCharacterMapping().keys()])
         existing = 0
         new = 0
         glyphNames = u""
