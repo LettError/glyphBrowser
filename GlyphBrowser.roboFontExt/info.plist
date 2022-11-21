@@ -10,7 +10,7 @@
 			<key>preferredName</key>
 			<string>GlyphBrowser</string>
 			<key>shortKey</key>
-			<string>g</string>
+			<string></string>
 		</dict>
 	</array>
 	<key>developer</key>
@@ -28,8 +28,8 @@
 	<key>requiresVersionMinor</key>
 	<string>2</string>
 	<key>timeStamp</key>
-	<real>1647893196.96998</real>
+	<real>1669051077.2607129</real>
 	<key>version</key>
-	<string>2.6.6</string>
+	<string>2.6.7</string>
 </dict>
 </plist>

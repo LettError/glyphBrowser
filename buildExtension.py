@@ -60,7 +60,7 @@ if resourcesPath:
     B.icon = imagePath
 
 # version of the extension
-B.version = '2.6.6'
+B.version = '2.6.7'
 
 # should the extension be launched at start-up?
 B.launchAtStartUp = False
@@ -80,7 +80,7 @@ B.addToMenu = [
     {
         'path' : 'browser.py',
         'preferredName': 'GlyphBrowser',
-        'shortKey' : 'g',
+        'shortKey' : '',
     },
 ]
 
