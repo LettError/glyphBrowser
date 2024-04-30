@@ -184,7 +184,7 @@ def extractUnicodesFromEncodingFile(path):
         else:
             print("GlyphBrowser: ENC importer: can't find a value for %s" % line)
     return values
-    
+
 def extractUnicodesFromUFO(path):
     f = RFont(path, showInterface=False)
     values = []
@@ -193,7 +193,7 @@ def extractUnicodesFromUFO(path):
             values.append(u)
     f.close()
     return values
-    
+
 def extractUnicodesFromOpenType(pathOrFile):
     source = TTFont(pathOrFile)
     cmap = source["cmap"]
@@ -223,7 +223,7 @@ def extractUnicodesFromOpenType(pathOrFile):
         for uniValue, glyphName in table.cmap.items():
             reversedMapping[glyphName] = uniValue
     return reversedMapping
-    
+
 def unicodeToChar(uni):
     import struct
     if uni < 0xFFFF:
@@ -287,7 +287,7 @@ class AddGlyphsSheet(BaseWindowController):
         self.w.markGlyphsCheck, self.w.selectGlyphsCheck
         selection = []
         newGlyphs = {}
-        
+
         targetFonts = []
         if self.targetFonts is not None:
             targetFonts = self.targetFonts
@@ -818,13 +818,13 @@ class Browser(object):
         self.currentSelection = []
         self._typing = False
         self.unicodeVersion = unicodeVersionString
-        
-        
+
+
         topRow = 80
         catWidth = 320
 
-        self.w = vanilla.Window((1200, 500), 
-            ("GlyphBrowser with %s and %s"%(self.unicodeVersion, versionString)), 
+        self.w = vanilla.Window((1200, 500),
+            ("GlyphBrowser with %s and %s"%(self.unicodeVersion, versionString)),
             minSize=(800, 500),
             autosaveName = "com.letterror.glyphBrowser.mainWindow",
             )
@@ -919,17 +919,17 @@ class Browser(object):
         self.w.bind("close", self.windowClosing)
         self.w.open()
         self.w.catNames.setSelection([0])
-    
+
     def namesMenu_buildMenu(self, sender):
         try:
             items = []
             sel  = sender.getSelection()
             allNames = []
             for nameObj in self.currentSelection:
-                allNames += nameObj.getAllNames() 
+                allNames += nameObj.getAllNames()
             if len(sel) == 1 and len(self.currentSelection)>=1:
                 nameObj = self.currentSelection[0]
-                allNames += nameObj.getAllNames() 
+                allNames += nameObj.getAllNames()
                 thisName = nameObj.getAllNames()[0]
                 items.append(dict(title=f"Edit {thisName}"))
                 items.append(dict(title=f"Lookup {nameObj.asU()}", callback = self.callbackLookup))
@@ -968,7 +968,7 @@ class Browser(object):
         except:
             print("Error making Menu", traceback.format_exc())
         return items
-        
+
     def callbackDropOnLocationList(self, sender, dropInfo):
         #   handle files droppings on the list
         #       this is how the drop info comes in
@@ -981,7 +981,7 @@ class Browser(object):
         #            'dropOnRow': False,
         #            'isProposal': False
         #        }
-        
+
         # are we offered ,ufo files?
         acceptedPaths = {}
         values = []
@@ -1053,10 +1053,12 @@ class Browser(object):
         #items = [dict(name=name) for name in self.catNames]
         self.w.catNames.set(items)
         self.checkSampleSize()
-    
+
     def windowClosing(self, sender):
         # Reset the font window glyph collection query
-        CurrentFontWindow().getGlyphCollection().setQuery(None)
+        fontWindow = CurrentFontWindow()
+        if fontWindow is not None:
+            fontWindow.getGlyphCollection().setQuery(None)
 
     def callbackLookup(self, sender=None):
         lookupThese = []
@@ -1214,7 +1216,7 @@ class Browser(object):
             query = "Unicode in {%s}"%",".join(selectedUniNumbers)
             queryObj = NSPredicate.predicateWithFormat_(query)
             CurrentFontWindow().getGlyphCollection().setQuery(queryObj)
-    
+
     # stuff to clipboard
     def _toPasteBoard(self, text):
         pb = NSPasteboard.generalPasteboard()
@@ -1235,10 +1237,10 @@ class Browser(object):
                     if os.path.basename(f.path) == ufoName:
                         self.callbackOpenGlyphSheet(targetFonts=[f])
                         break
-    
+
     def menuCallbackCopyHexUnicode(self, item):
         self.copyNamesCallback(what="hexnumbers")
-    
+
     def menuCallbackCopyEscapedUnicode(self, item):
         self.copyNamesCallback(what="escaped")
 
@@ -1247,16 +1249,16 @@ class Browser(object):
 
     def menuCallbackCopyNames(self, item):
         self.copyNamesCallback(what="names")
-    
+
     def menuCallbackCopyStrings(self, item):
         self.copyNamesCallback(what="comma")
 
     def menuCallbackCopySlash(self, item):
         self.copyNamesCallback(what="slash")
-    
+
     def menuCallbackCopyUnicodeText(self, item):
         self.copyNamesCallback(what="unicode")
-        
+
     def copyNamesCallback(self, sender=None, what=None):
         t = None
         if what is not None:
@@ -1286,7 +1288,7 @@ class Browser(object):
         elif t == "escaped":
             copyable = unitext.encode('ascii', 'backslashreplace')
         self._toPasteBoard(copyable)
-    
+
     def toSpaceCenter(self, sender):
         # copy the current selection to spacecenter
         names = []
