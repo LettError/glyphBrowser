@@ -1,11 +1,12 @@
 # a script for drawbot.app that generates the icon
 size(512, 512)
 
-c1 = (1,0,.95)
-c2 = (0,.05,.95)
-c3 = (.55,.5,.95)
+c1 = (0.6,0,.27)
+c2 = (0.4,.05,.63)
+c3 = (.55,.6,.74)
 
-font("MicrogrammaCom-BoldExtended")
+fn = "MicrogrammaD-BoldExte"
+font(fn)
 s = 148
 h = 391
 f = 0.75
@@ -15,7 +16,7 @@ fill(*c1)
 
 text("GLYP", (10, h))
 t = FormattedString()
-t.font("MicrogrammaCom-BoldExtended")
+t.font(fn)
 t.fontSize(148)
 t.fill(*c1)
 
@@ -32,7 +33,7 @@ fill(*c3)
 fontSize(50)
 text("unicode", (274, h-f*3*s-38))
 fontSize(s)
-text("12", (256, h-f*3*s))
+text("16", (256, h-f*3*s))
 
 
 saveImage("icon.pdf")

@@ -273,16 +273,21 @@ class AddGlyphsSheet(BaseWindowController):
         self.w.proposedNames.set(names)
         text = ""
         if len(self.theseGlyphs) > 1:
-            text = "Add %d unicodes, %d glyphnames" % (len(self.theseGlyphs), len(names))
+            text = f"Add {len(self.theseGlyphs)} unicodes, {len(names)} glyphnames"
         else:
-            text = "Add this unicode"
-        if self.targetFonts is not None:
-            text += f" to {len(self.targetFonts)} UFOs"
+            text = f"Add this unicode"
+        if len(self.targetFonts) > 0:
+            #print("self.targetFonts", self.targetFonts)
+            ufoCount = len(self.targetFonts)
+            if ufoCount > 1:
+                text += f" to {ufoCount} UFOs"
+                
         text += ":"
         self.w.namesCaption.set(text)
 
     def callbackApplyAddGlyphsToTargetFont(self, sender=None):
-        # see if the current data is any different from the original data
+        # add the selected glyphs to the selected font
+        # skip a glyph if it already exists.
 
         self.w.markGlyphsCheck, self.w.selectGlyphsCheck
         selection = []
@@ -296,6 +301,7 @@ class AddGlyphsSheet(BaseWindowController):
                 variantNames = glyph.getAllNames()
                 for variantName in variantNames:
                     if variantName in font:
+                        #print(f"\tcallbackApplyAddGlyphsToTargetFont {variantName} exists, skipping")
                         continue
                     if not variantName in font:
                         font.newGlyph(variantName)
@@ -800,6 +806,8 @@ def sortByUnicode(items, ascending=True):
             sortedList.append(j)
     return sortedList
 
+
+
 class Browser(object):
 
     # this looks like a reasonable unicode reference database.
@@ -831,12 +839,18 @@ class Browser(object):
         columnDescriptions = [
             {    'title': u"",
                  'key': 'col1',
-                 'width': 50},
+                 'width': 50,
+                 'allowsSorting': False,
+                 },
             {    'title': u"",
                  'key': 'col2',
-                 'width': 50},
+                 'width': 50,
+                 'allowsSorting': False,
+                 },
             {    'title': "Categories, ranges, namelists",
-                    'key': 'name'},
+                    'key': 'name',
+                 'allowsSorting': False,
+                    },
         ]
         self.w.catNames = vanilla.List((5, topRow, catWidth, -5), [],
             columnDescriptions=columnDescriptions,
@@ -925,8 +939,12 @@ class Browser(object):
             items = []
             sel  = sender.getSelection()
             allNames = []
+            #print("namesMenu_buildMenu sel", sel)
+            # what is self.currentSelection ?
+            #print("namesMenu_buildMenu self.currentSelection", self.currentSelection)
             for nameObj in self.currentSelection:
                 allNames += nameObj.getAllNames() 
+            #print('namesMenu_buildMenu', allNames)
             if len(sel) == 1 and len(self.currentSelection)>=1:
                 nameObj = self.currentSelection[0]
                 allNames += nameObj.getAllNames() 
@@ -938,33 +956,30 @@ class Browser(object):
             else:
                 fontTitle = f"Add {len(allNames):d} new glyphs to Font"
             copySubMenu = []
-            copySubMenu.append(dict(title="Copy as Unicode Text", callback = self.menuCallbackCopyUnicodeText))
-            copySubMenu.append(dict(title="Copy as Slashed Names", callback = self.menuCallbackCopySlash))
-            copySubMenu.append(dict(title="Copy as Comma Separated Strings", callback = self.menuCallbackCopyStrings))
-            copySubMenu.append(dict(title="Copy as Space Separated Names", callback = self.menuCallbackCopyNames))
-            copySubMenu.append(dict(title="Copy as Hex Unicode", callback = self.menuCallbackCopyHexUnicode))
-            copySubMenu.append(dict(title="Copy as Escaped Unicode String", callback = self.menuCallbackCopyEscapedUnicode))
-            copySubMenu.append(dict(title="Copy as Feature Group", callback = self.menuCallbackCopyFeature))
+            copySubMenu.append(dict(title="Unicode Text", callback = self.menuCallbackCopyUnicodeText))
+            copySubMenu.append(dict(title="Slashed Names", callback = self.menuCallbackCopySlash))
+            copySubMenu.append(dict(title="Comma Separated Strings", callback = self.menuCallbackCopyStrings))
+            copySubMenu.append(dict(title="Space Separated Names", callback = self.menuCallbackCopyNames))
+            copySubMenu.append(dict(title="Hex Unicodes", callback = self.menuCallbackCopyHexUnicode))
+            copySubMenu.append(dict(title="Escaped Unicode String", callback = self.menuCallbackCopyEscapedUnicode))
+            copySubMenu.append(dict(title="Feature Group", callback = self.menuCallbackCopyFeature))
 
-            items.append(dict(title="Copy Names", items=copySubMenu))
+            items.append(dict(title=f"Copy Selected {len(allNames)} Names As…", items=copySubMenu))
             items.append("----")
             fontSubMenu = []
             allPaths = []
-            for f in AllFonts():
-                if f.path is not None:
-                    path = f.path
-                else:
-                    path = "Unsaved UFO"
-                fontSubMenu.append(dict(title=os.path.basename(path), callback=self.menuCallbackCopyToUFO, tag="one"))
-            fontSubMenu.append("----")
-            fontSubMenu.append(dict(title="All", callback=self.menuCallbackCopyToUFO, tag="all"))
-            items.append(dict(title=fontTitle, items=fontSubMenu))
-            #items.append(dict(title="Add to Font"))
-            items.append(dict(title="Show in Spacecenter"))
-            # for nameObj in self.currentSelection:
-            #     names = nameObj.getAllNames()
-            #     for n in names:
-            #         items.append(dict(title="Add %s" % n))
+            if len(AllFonts()) > 0:
+                for f in AllFonts():
+                    if f.path is not None:
+                        path = f.path
+                    else:
+                        path = "Unsaved UFO"
+                    fontSubMenu.append(dict(title=os.path.basename(path), callback=self.menuCallbackCopyToUFO, tag="one"))
+                fontSubMenu.append("----")
+                fontSubMenu.append(dict(title="All", callback=self.menuCallbackCopyToUFO, tag="all"))
+                items.append(dict(title=fontTitle, items=fontSubMenu))
+                #items.append(dict(title="Add to Font"))
+                items.append(dict(title="Show in Spacecenter"))
         except:
             print("Error making Menu", traceback.format_exc())
         return items
@@ -1056,7 +1071,9 @@ class Browser(object):
     
     def windowClosing(self, sender):
         # Reset the font window glyph collection query
-        CurrentFontWindow().getGlyphCollection().setQuery(None)
+        window = CurrentFontWindow()
+        if window is not None:
+            window.getGlyphCollection().setQuery(None)
 
     def callbackLookup(self, sender=None):
         lookupThese = []
@@ -1086,7 +1103,7 @@ class Browser(object):
         # if text is edited here, find the glyphs that are used in the text
         # and add those to the selection. This way we can quickly add characters
         # from cut / paste text to the selection
-        f = CurrentFont()
+        #f = CurrentFont()
         text = sender.get()
         text = text.replace("\r", " ")
         text = text.replace("\n", " ")
@@ -1104,7 +1121,7 @@ class Browser(object):
 
     def callbackSearch(self, sender):
         # get the searchstring from the box and try to match as many characters as possible,
-        f = CurrentFont()
+        #f = CurrentFont()
         searchString = self.w.searchBox.get()
         glyphSelection = sorted(findGlyphs(self.data, searchString), key=lambda x:str(x))
         items = [g.asDict(self._unicodes, self._names, self.joiningTypes) for g in glyphSelection]
@@ -1112,8 +1129,9 @@ class Browser(object):
         self.w.selectedNames.set(items)
         self.w.catNames.setSelection([])
 
-    def setCurrentFontWindowSelection(self):
-        self.currentSelection
+    #def setCurrentFontWindowSelection(self):
+    #    print("setCurrentFontWindowSelection")
+    #    self.currentSelection
 
     def callbackWindowMain(self, sender):
         f = CurrentFont()
@@ -1122,18 +1140,24 @@ class Browser(object):
             self.w.addGlyphPanelButton.enable(True)
             self.w.toSpaceCenter.enable(True)
             self._unicodes = list(set([g.unicode for g in f]))
-            self._names = f.keys()
+            self._names = list(f.keys())
         else:
             self.w.addGlyphPanelButton.enable(False)
             self.w.toSpaceCenter.enable(False)
             self._unicodes = []
             self._names = []
+        #print("self._unicodes is now", self._unicodes)
         self.checkSampleSize()
 
     def callbackOpenGlyphSheet(self, sender=None, targetFonts=None):
         theseGlyphs = self.currentSelection
         if targetFonts is None:
             targetFonts = AllFonts()
+        if len(targetFonts) == 0:
+            print("no fonts to add glyphs to")
+            # wave hands
+            return
+        #print('callbackOpenGlyphSheet!')
         self._addGlyphsSheet = AddGlyphsSheet(theseGlyphs,
             self.w,
             self.callbackCancelGlyphsSheet,
@@ -1148,6 +1172,7 @@ class Browser(object):
         pass
 
     def callbackGlyphNameSelect(self, sender):
+        #print("callbackGlyphNameSelect")
         f = CurrentFont()
         existingCharacters = set()
         if f is not None:
@@ -1175,9 +1200,12 @@ class Browser(object):
                             existing += 1
                         else:
                             new += 1
-                self.currentSelection.append(self.data[name])    # means they're not sorted. Problem?
+                #self.currentSelection.append(self.data[name])    # means they're not sorted. Problem?
             else:
                 existing += 1
+            # try this here, add to the currentSelection even if the glyph
+            # is already present in the font.
+            self.currentSelection.append(self.data[name])
         if new == 0 and existing == 0:
             self.w.progress.set("")
         else:
@@ -1217,6 +1245,7 @@ class Browser(object):
     
     # stuff to clipboard
     def _toPasteBoard(self, text):
+        #print("_toPasteBoard", text)
         pb = NSPasteboard.generalPasteboard()
         pb.clearContents()
         pb.declareTypes_owner_([
@@ -1231,15 +1260,23 @@ class Browser(object):
         else:
             ufoName = str(item.title())
             for f in AllFonts():
-                if f.path is not None:
-                    if os.path.basename(f.path) == ufoName:
-                        self.callbackOpenGlyphSheet(targetFonts=[f])
-                        break
+                # this will not add glyphs to unsaved fonts.
+                # is this a problem? It is with testing..
+                #print('menuCallbackCopyToUFO', f.path, ufoName)
+                #if f.path is not None:
+                if f.path is None and ufoName == "Unsaved UFO":
+                    # add glyphs to an unsaved font
+                    # might be a problem if you have several open
+                    # but that is not our problem.
+                    self.callbackOpenGlyphSheet(targetFonts=[f])
+                elif os.path.basename(f.path) == ufoName:
+                    self.callbackOpenGlyphSheet(targetFonts=[f])
     
     def menuCallbackCopyHexUnicode(self, item):
         self.copyNamesCallback(what="hexnumbers")
     
     def menuCallbackCopyEscapedUnicode(self, item):
+        #print("menuCallbackCopyEscapedUnicode", item)
         self.copyNamesCallback(what="escaped")
 
     def menuCallbackCopyFeature(self, item):
@@ -1270,7 +1307,9 @@ class Browser(object):
             names += nameObj.getAllNames()
         copyable = ""
         unitext = ''.join([nameObj.unicodeString for nameObj in self.currentSelection])
-        #print("unitext", unitext)
+        #print("copyNamesCallback unitext", unitext)
+        #print("copyNamesCallback names", names)
+        #print("copyNamesCallback self.currentSelection", self.currentSelection)
         if t == "names":
             copyable = " ".join(names)
         elif t == "comma":
@@ -1285,6 +1324,7 @@ class Browser(object):
             copyable = ' '.join(["0x%04x" % nameObj.uni for nameObj in self.currentSelection])
         elif t == "escaped":
             copyable = unitext.encode('ascii', 'backslashreplace')
+            #print("escaped copyable", copyable)
         self._toPasteBoard(copyable)
     
     def toSpaceCenter(self, sender):
